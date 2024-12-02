@@ -98,7 +98,7 @@ Regs_out <- df3 %>%
 
 p<- catch_agg  %>% 
   ggplot2::ggplot(aes(x = Value_cod, y = Value_had))+
-   geom_point(aes(label = run_number, colour = under_acl_cod)) +
+   #geom_point(aes(label = run_number, colour = under_acl_cod)) +
    #geom_text(aes(label = run_number, y = Value_had + 0.25))+
    geom_text(aes(label=run_number, hjust=1, vjust=1))+
    #geom_text(aes(label=ifelse(Value_cod>cod_acl & Value_had > had_acl, as.character(run_number), ' '), hjust=1, vjust=1))+
@@ -147,7 +147,7 @@ catch<- df2 %>%
   dplyr::mutate(run_number = as.numeric(run_number))
 
  p1<- catch %>% ggplot2::ggplot(aes(x = cod, y = CV))+
-   geom_point() +
+   #geom_point() +
    geom_vline( xintercept =cod_acl)+
      geom_text(aes(label=run_number, hjust=1, vjust=1))+
    ggtitle("Cod")+
@@ -156,7 +156,7 @@ catch<- df2 %>%
    theme(legend.position = "none")
 
  p2<- catch %>% ggplot2::ggplot(aes(x = had, y = CV))+
-   geom_point() +
+   #geom_point() +
    geom_vline( xintercept =had_acl)+
      geom_text(aes(label=run_number, hjust=1, vjust=1))+
    ggtitle("Hadock")+
@@ -198,7 +198,7 @@ catch<- df2 %>%
   tidyr::pivot_wider(names_from = Category, values_from = c(Value, release))
 
  p1<- catch %>% ggplot2::ggplot(aes(x = Value_cod, y = release_cod))+
-   geom_point() +
+   #geom_point() +
    geom_vline( xintercept = cod_acl)+
    geom_text(aes(label=run_number, hjust=0, nudge_x=5))+
    ggtitle("Cod")+
@@ -207,7 +207,7 @@ catch<- df2 %>%
    theme(legend.position = "none")
 
  p2<- catch %>% ggplot2::ggplot(aes(x = Value_had, y = release_had))+
-   geom_point() +
+   #geom_point() +
    geom_vline( xintercept =had_acl)+
    geom_text(aes(label=run_number, hjust=0, nudge_x=50))+
    ggtitle("Hadock")+
