@@ -63,13 +63,23 @@ Regs_out <- df3 %>%
   dplyr::rename(Mode = mode,
                 `Bag Limit` = Value_bag,
                 `Min Size (in)` = Value_size, 
-                Season = Value_Season) %>%
+                SeasonO = Value_Season) %>%
   tidyr::separate(Species, into = c("Species"), sep = "(?<=[A-Za-z])") %>%
   dplyr::mutate(Species = dplyr::recode(Species, "C" = "Cod", "H" = "Haddock"),
                 Mode = dplyr::recode(Mode, "FH" = "For Hire", "PR" = "Private")) %>%
-  dplyr::mutate(Diff_from_SQ = paste0(Diff_from_SQ_bag,Diff_from_SQ_size,Diff_from_SQ_Season)) %>% 
+  dplyr::mutate(Diff_from_SQ = paste0(Diff_from_SQ_bag,Diff_from_SQ_size,Diff_from_SQ_Season)) %>%
+  tidyr::separate_wider_delim(SeasonO," - ", names=c("S1","S2")) %>%
+   mutate(S1=lubridate::ymd(S1),
+          S2=lubridate::ymd(S2)) %>%
+   mutate(Season=paste0(format(S1,format="%B %d")," - ", format(S2,format="%B %d"))) %>%
    dplyr::select(run_number, Species, Mode, `Bag Limit`, `Min Size (in)`, Season, Diff_from_SQ)
+   
  DT::datatable(Regs_out)
+ 
+
+ 
+
+
 ```
 
 
