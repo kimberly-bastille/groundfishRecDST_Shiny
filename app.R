@@ -22,11 +22,11 @@ ui <- fluidPage(
                section has graphs of other performance measures, including Economic Surplus, Trips, and Discards."),
 
 
-             p("The first figure plots the predicted Cod and Haddock recreational mortality for previously simulated management measures."),
+             p("The first figure plots the predicted median Cod and Haddock recreational mortality for previously simulated management measures."),
 
-             p("Cod mortality is plotted on the horizontal axis. The Cod ACL is the dashed line. Regulations with average mortality under the cod ACL are to the left of the dashed vertical line."),
+             p("Median Cod mortality is plotted on the horizontal axis. The Cod ACL is the dashed line. Regulations with median mortality under the cod ACL are to the left of the dashed vertical line."),
 
-             p("Haddock mortality is plotted on the vertical axis. The Haddock ACL is the solid line. Regulations with average mortality under the Haddock ACL are below the solid horizontal line."),
+             p("Median Haddock mortality is plotted on the vertical axis. The Haddock ACL is the solid line. Regulations with median mortality under the Haddock ACL are below the solid horizontal line."),
              plotlyOutput(outputId = "totCatch"),
 
              DTOutput(outputId = "DTout"),
@@ -51,10 +51,10 @@ ui <- fluidPage(
 
 
     tabPanel( "Regulation Selection",
-              strong(div("Future Notes Here", style = "color:blue")), # Warning for users
+              strong(div("Use this page to set up the regulations that you would like to simulate. We have pre-loaded the status quo regulations.", style = "color:blue")), # Warning for users
               #Run Button
               actionButton("runmeplease", "Run Me"),
-              textInput("Run_Name", "Name this run"),
+              textInput("Run_Name", "Please give this run a short, unique name (No underscores “_” )"),
 
               fluidRow(
                 column(6,
@@ -132,10 +132,10 @@ ui <- fluidPage(
                        fluidRow(
                          column(4,
                                 numericInput(inputId = "HadPR_1_bag", label = "Bag Limit",
-                                             min = 0, max = 100, value = 10)),
+                                             min = 0, max = 100, value = 15)),
                          column(5,
                                 sliderInput(inputId = "HadPR_1_len", label = "Min Length",
-                                            min = 15, max = 30, value = 17, step = .5))),
+                                            min = 15, max = 30, value = 18, step = .5))),
 
                        sliderInput(inputId = "HadFH_seas2", label ="For Hire Open Season 2",
                                    min = as.Date("2024-05-01","%Y-%m-%d"),
@@ -157,10 +157,10 @@ ui <- fluidPage(
                        fluidRow(
                          column(4,
                                 numericInput(inputId = "HadPR_2_bag", label = "Bag Limit",
-                                             min = 0, max = 100, value = 10)),
+                                             min = 0, max = 100, value = 15)),
                          column(5,
                                 sliderInput(inputId = "HadPR_2_len", label = "Min Length",
-                                            min = 15, max = 30, value = 17, step = .5))),
+                                            min = 15, max = 30, value = 18, step = .5))),
 
                        actionButton("HADaddSeason", "Add Season"),
                        shinyjs::hidden( div(ID = "HadSeason3",
@@ -175,7 +175,7 @@ ui <- fluidPage(
                                                                   min = 0, max = 20, value = 0)),
                                               column(6,
                                                      sliderInput(inputId = "HadFH_3_len", label ="Min Length",
-                                                                 min = 15, max = 25, value = 15, step = .5))),
+                                                                 min = 15, max = 30, value = 18, step = .5))),
                                             sliderInput(inputId = "HadPR_seas3", label ="Private Open Season 3",
                                                         min = as.Date("2024-05-01","%Y-%m-%d"),
                                                         max = as.Date("2025-04-30","%Y-%m-%d"),
@@ -187,7 +187,7 @@ ui <- fluidPage(
                                                                   min = 0, max = 20, value = 0)),
                                               column(6,
                                                      sliderInput(inputId = "HadPR_3_len", label ="Min Length",
-                                                                 min = 15, max = 25, value = 15, step = .5)))))))),
+                                                                 min = 15, max = 30, value = 18, step = .5)))))))),
 
 
     #### Results ####
@@ -404,8 +404,8 @@ server <- function(input, output, session){
       geom_hline( yintercept =had_acl(), color="grey45")+
       scale_colour_gradient(low = "white", high = "darkgreen")+
       ggtitle("Cod and Haddock Mortality")+
-      ylab("Total Haddock Mortality (mt)")+
-      xlab("Total Cod Mortality (mt)")
+      ylab("Median Recreational Haddock Mortality (mt)")+
+      xlab("Median Recreational Cod Mortality (mt)")
 
     fig<- plotly::ggplotly(p,
                            tooltip = c("x", "y", "colour")) %>%
@@ -423,7 +423,7 @@ server <- function(input, output, session){
           dplyr::group_by(run_number, option, Category, draw_out) %>%
           dplyr::summarise(Value = sum(as.numeric(Value))) %>%
           dplyr::group_by(run_number,option, Category) %>%
-          dplyr::summarise(CV = median(Value))
+          dplyr::summarise(CV = round(median(Value),0))
 
 
         catch<- df2() %>%
@@ -433,7 +433,7 @@ server <- function(input, output, session){
           dplyr::summarise(Value = sum(as.numeric(Value))) %>%
           dplyr::mutate(Value = Value * lb_to_mt()) %>%
           dplyr::group_by(run_number, option, Category) %>%
-          dplyr::summarise(Value = median(Value)) %>%
+          dplyr::summarise(Value =round(median(Value),0)) %>%
           tidyr::pivot_wider(names_from = Category, values_from = Value) %>%
           dplyr::left_join(welfare) %>%
           dplyr::select(!Category)
@@ -471,7 +471,7 @@ server <- function(input, output, session){
           dplyr::group_by(run_number, option, Category, draw_out) %>%
           dplyr::summarise(Value = sum(as.numeric(Value))) %>%
           dplyr::group_by(run_number,option, Category) %>%
-          dplyr::summarise(CV = median(Value))
+          dplyr::summarise(CV = round(median(Value),0))
 
         catch<- df2() %>%
           dplyr::filter(catch_disposition %in% c("keep", "Discmortality"),
@@ -480,7 +480,7 @@ server <- function(input, output, session){
           dplyr::summarise(Value = sum(as.numeric(Value))) %>%
           dplyr::mutate(Value = Value * lb_to_mt()) %>%
           dplyr::group_by(run_number, option, Category) %>%
-          dplyr::summarise(Value = median(Value)) %>%
+          dplyr::summarise(Value = round(median(Value),0)) %>%
           tidyr::pivot_wider(names_from = Category, values_from = Value) %>%
           dplyr::left_join(welfare) %>%
           dplyr::select(!Category)
@@ -490,7 +490,7 @@ server <- function(input, output, session){
           geom_vline( xintercept =had_acl())+
           geom_text(aes(label=run_number), position=position_jitter(width=1,height=1))+
           ylab("Consumer Surplus ($)")+
-          xlab("Total Haddock Mortality (mt)")+
+          xlab("Recreational Haddock Mortality (mt)")+
           theme(legend.position = "none")
 
         fig2<- ggplotly(p2) %>%
@@ -517,7 +517,7 @@ server <- function(input, output, session){
           dplyr::summarise(Value = sum(as.numeric(Value))) %>%
           dplyr::mutate(Value = Value * lb_to_mt()) %>%
           dplyr::group_by(run_number,option, Category) %>%
-          dplyr::summarise(release = median(Value))
+          dplyr::summarise(release = round(median(Value),0))
 
 
         catch<- df2() %>%
@@ -527,16 +527,20 @@ server <- function(input, output, session){
           dplyr::summarise(Value = sum(as.numeric(Value))) %>%
           dplyr::mutate(Value = Value * lb_to_mt()) %>%
           dplyr::group_by(run_number, option, Category) %>%
-          dplyr::summarise(Value = median(Value)) %>%
+          dplyr::summarise(Value =round(median(Value),0)) %>%
           dplyr::left_join(release) %>%
-          tidyr::pivot_wider(names_from = Category, values_from = c(Value, release))
+          tidyr::pivot_wider(names_from = Category, values_from = c(Value, release))%>%
+          dplyr::rename(`Cod Mortality`=Value_cod) %>%
+          dplyr::rename(`Haddock Mortality`=Value_had)%>%
+          dplyr::rename(`Cod Release`=release_cod) %>%
+          dplyr::rename(`Haddock Release`=release_had)
 
-        p3<- catch %>% ggplot2::ggplot(aes(x = Value_cod, y = release_cod))+
+        p3<- catch %>% ggplot2::ggplot(aes(x = `Cod Mortality`, y = `Cod Release`))+
           geom_point() +
           geom_vline( xintercept =cod_acl())+
           geom_text(aes(label=run_number), position=position_jitter(width=1,height=1))+
           ylab("Cod Releases (mt)")+
-          xlab("Total Cod Mortality (mt)")+
+          xlab("Recreational Cod Mortality (mt)")+
           theme(legend.position = "none")
 
         fig3<- ggplotly(p3)%>%
@@ -559,7 +563,7 @@ server <- function(input, output, session){
           dplyr::summarise(Value = sum(as.numeric(Value))) %>%
           dplyr::mutate(Value = Value * lb_to_mt()) %>%
           dplyr::group_by(run_number,option, Category) %>%
-          dplyr::summarise(release = median(Value))
+          dplyr::summarise(release = round(median(Value),0))
 
 
         catch<- df2() %>%
@@ -569,11 +573,16 @@ server <- function(input, output, session){
           dplyr::summarise(Value = sum(as.numeric(Value))) %>%
           dplyr::mutate(Value = Value * lb_to_mt()) %>%
           dplyr::group_by(run_number, option, Category) %>%
-          dplyr::summarise(Value = median(Value)) %>%
+          dplyr::summarise(Value = round(median(Value),0)) %>%
           dplyr::left_join(release) %>%
-          tidyr::pivot_wider(names_from = Category, values_from = c(Value, release))
+          tidyr::pivot_wider(names_from = Category, values_from = c(Value, release))%>%
+          dplyr::rename(`Cod Mortality`=Value_cod) %>%
+          dplyr::rename(`Haddock Mortality`=Value_had)%>%
+          dplyr::rename(`Cod Release`=release_cod) %>%
+          dplyr::rename(`Haddock Release`=release_had)
 
-        p4<- catch %>% ggplot2::ggplot(aes(x = Value_had, y = release_had))+
+
+        p4<- catch %>% ggplot2::ggplot(aes(x = `Haddock Mortality`, y = `Haddock Release`))+
           geom_point() +
           geom_vline( xintercept = had_acl())+
           geom_text(aes(label=run_number), position=position_jitter(width=1,height=1))+
@@ -599,7 +608,7 @@ server <- function(input, output, session){
               dplyr::group_by(run_number, option, Category, draw_out) %>%
               dplyr::summarise(Value = sum(as.numeric(Value))) %>%
               dplyr::group_by(run_number,option, Category) %>%
-              dplyr::summarise(trips = median(Value))
+              dplyr::summarise(Trips = round(median(Value),0))
 
 
             catch<- df2() %>%
@@ -609,13 +618,15 @@ server <- function(input, output, session){
               dplyr::summarise(Value = sum(as.numeric(Value))) %>%
               dplyr::mutate(Value = Value * lb_to_mt()) %>%
               dplyr::group_by(run_number, option, Category) %>%
-              dplyr::summarise(Value = median(Value)) %>%
+              dplyr::summarise(Value = round(median(Value),0)) %>%
               tidyr::pivot_wider(names_from = Category, values_from = Value) %>%
               dplyr::left_join(trips) %>%
-              dplyr::select(!Category)
+              dplyr::select(!Category)%>%
+              dplyr::rename(`Cod Mortality`=cod) %>%
+              dplyr::rename(`Haddock Mortality`=had)
 
 
-            p5<- catch %>% ggplot2::ggplot(aes(x = cod, y = trips))+
+            p5<- catch %>% ggplot2::ggplot(aes(x = `Cod Mortality`, y = Trips))+
               geom_point() +
               geom_vline( xintercept = cod_acl())+
               geom_text(aes(label=run_number), position=position_jitter(width=1,height=1))+
@@ -642,7 +653,7 @@ server <- function(input, output, session){
               dplyr::group_by(run_number, option, Category, draw_out) %>%
               dplyr::summarise(Value = sum(as.numeric(Value))) %>%
               dplyr::group_by(run_number,option, Category) %>%
-              dplyr::summarise(trips = median(Value))
+              dplyr::summarise(Trips = round(median(Value),0))
 
 
             catch<- df2() %>%
@@ -652,12 +663,15 @@ server <- function(input, output, session){
               dplyr::summarise(Value = sum(as.numeric(Value))) %>%
               dplyr::mutate(Value = Value * lb_to_mt()) %>%
               dplyr::group_by(run_number, option, Category) %>%
-              dplyr::summarise(Value = median(Value)) %>%
+              dplyr::summarise(Value = round(median(Value),0)) %>%
               tidyr::pivot_wider(names_from = Category, values_from = Value) %>%
               dplyr::left_join(trips) %>%
-              dplyr::select(!Category)
+              dplyr::select(!Category)%>%
+              dplyr::rename(`Cod Mortality`=cod) %>%
+              dplyr::rename(`Haddock Mortality`=had)
 
-            p6<- catch %>% ggplot2::ggplot(aes(x = had, y = trips))+
+
+            p6<- catch %>% ggplot2::ggplot(aes(x = `Haddock Mortality`, y = Trips))+
               geom_point() +
               geom_vline( xintercept = had_acl())+
               geom_text(aes(label=run_number), position=position_jitter(width=1,height=1))+
