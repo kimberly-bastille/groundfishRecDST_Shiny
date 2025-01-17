@@ -57,7 +57,6 @@ predict_rec_catch <- function( x, draw,
                                catch_data_all,
                                calendar_adjust,
                                discard_mortality_dat,
-                               baseline_comparison,
                                n_drawz = 50,
                                n_catch_draws = 30){
 
@@ -116,10 +115,10 @@ predict_rec_catch <- function( x, draw,
     h_star_hadd_keep_to_release_variable<-mean(baseline_comparison1$h_star_hadd_keep_to_release_variable)
 
     #number of legal cod/haddock released, or illegal cod/haddock harvested in the baseline year
-    n_legal_cod_rel_base<-mean(baseline_comparison$n_legal_cod_rel)
-    n_legal_hadd_rel_base<-mean(baseline_comparison$n_legal_hadd_rel)
-    n_sub_cod_kept_base<-mean(baseline_comparison$n_sub_cod_kept)
-    n_sub_had_kept_base<-mean(baseline_comparison$n_sub_had_kept)
+    n_legal_cod_rel_base<-mean(baseline_comparison1$n_legal_cod_rel)
+    n_legal_hadd_rel_base<-mean(baseline_comparison1$n_legal_hadd_rel)
+    n_sub_cod_kept_base<-mean(baseline_comparison1$n_sub_cod_kept)
+    n_sub_had_kept_base<-mean(baseline_comparison1$n_sub_had_kept)
 
     n_drawz = 50
     n_catch_draws = 30
@@ -136,7 +135,7 @@ predict_rec_catch <- function( x, draw,
       tibble::tibble() %>%
       dplyr::filter(draw == draw,
                     mode == select_mode) %>%
-      dplyr::mutate(open = dplyr::case_when(cod_bag_alt > 0 ~ 1, TRUE ~ 0))
+      dplyr::mutate(open = dplyr::case_when(cod_bag > 0 ~ 1, TRUE ~ 0))
 
 
     #Create as an object the minimum size at which fish are illegally harvested.
@@ -210,8 +209,8 @@ predict_rec_catch <- function( x, draw,
       tidyr::uncount(n_draws)
 
     cod_catch_data <- costs_new_all %>%
-      dplyr::mutate(tot_cod_catch = tot_keep_cod_base + tot_rel_cod_base,
-                    tot_had_catch = tot_keep_had_base + tot_rel_had_base) %>%
+      # dplyr::mutate(tot_cod_catch = tot_keep_cod_base + tot_rel_cod_base,
+      #               tot_had_catch = tot_keep_had_base + tot_rel_had_base) %>%
       dplyr::left_join(open, by = "period2") %>%
       dplyr::select(mode,month,tot_cod_catch,tot_had_catch,
                     tripid,catch_draw,day, period2)
@@ -226,7 +225,7 @@ predict_rec_catch <- function( x, draw,
       seas = "closed"
     }
 
-    CaL_draw<- baseline_comparison$draw
+    CaL_draw<- baseline_comparison1$draw
 
     cod_size_data <- size_data_read %>%
       dplyr::filter(species == "cod" & season == seas& draw==CaL_draw) %>%

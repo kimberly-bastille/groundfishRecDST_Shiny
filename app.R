@@ -12,13 +12,9 @@ ui <- fluidPage(
     tabPanel("Cod and Haddock Model Summary",
              p("This page summarizes models results for sets of policies that have been run to date. These are
                intended as a jumping off point for your own model runs."),
-             p("The results of your own model runs are stored. Please give it a short, unique name."),
              p("Hover over each point to view the detailed statistics for each model run. The first section contains
                a table of recreational management measures. The second section contains graphs of mortality. The third
-               section has graphs of other performance measures, including Economic Surplus, Trips, and Discards."),
-
-
-             p("The first figure plots the predicted median Cod and Haddock recreational mortality for previously simulated management measures."),
+               section has graphs of other performance measures, including relative change in Angler Satisfaction, Trips, and Discards."),
 
              shinyjs::useShinyjs(),
              shinyjs::extendShinyjs(text = "shinyjs.refresh_page = function() { location.reload(); }", functions = "refresh_page"),
@@ -86,7 +82,7 @@ ui <- fluidPage(
                                             sliderInput(inputId = "CodFH_seas2", label ="For Hire Open Season 2",
                                                         min = as.Date("2025-05-01","%Y-%m-%d"),
                                                         max = as.Date("2026-04-30","%Y-%m-%d"),
-                                                        value=c(as.Date("2026-04-30","%Y-%m-%d"),as.Date("2026-04-30","%Y-%m-%d")),
+                                                        value=c(as.Date("2026-01-01","%Y-%m-%d"),as.Date("2026-01-01","%Y-%m-%d")),
                                                         timeFormat = "%Y-%m-%d", ticks = FALSE),
                                             fluidRow(
                                               column(4,
@@ -94,11 +90,11 @@ ui <- fluidPage(
                                                                   min = 0, max = 20, value = 0)),
                                               column(6,
                                                      sliderInput(inputId = "CodFH_2_len", label ="Min Length",
-                                                                 min = 15, max = 25, value = 15, step = 1))),
+                                                                 min = 15, max = 25, value = 23, step = 1))),
                                             sliderInput(inputId = "CodPR_seas2", label ="Private Open Season 2",
                                                         min = as.Date("2025-05-01","%Y-%m-%d"),
                                                         max = as.Date("2026-04-30","%Y-%m-%d"),
-                                                        value=c(as.Date("2026-04-30","%Y-%m-%d"),as.Date("2026-04-30","%Y-%m-%d")),
+                                                        value=c(as.Date("2026-01-01","%Y-%m-%d"),as.Date("2026-01-01","%Y-%m-%d")),
                                                         timeFormat = "%Y-%m-%d", ticks = FALSE),
                                             fluidRow(
                                               column(4,
@@ -106,7 +102,7 @@ ui <- fluidPage(
                                                                   min = 0, max = 20, value = 0)),
                                               column(6,
                                                      sliderInput(inputId = "CodPR_2_len", label ="Min Length",
-                                                                 min = 15, max = 25, value = 15, step = 1)))))),
+                                                                 min = 15, max = 25, value = 23, step = 1)))))),
                 column(6,
                        titlePanel("Haddock"),
                        sliderInput(inputId = "HadFH_seas1", label ="For Hire Open Season 1",
@@ -164,7 +160,7 @@ ui <- fluidPage(
                                             sliderInput(inputId = "HadFH_seas3", label ="For Hire Open Season 3",
                                                         min = as.Date("2025-05-01","%Y-%m-%d"),
                                                         max = as.Date("2026-04-30","%Y-%m-%d"),
-                                                        value=c(as.Date("2026-04-30","%Y-%m-%d"),as.Date("2026-04-30","%Y-%m-%d")),
+                                                        value=c(as.Date("2026-01-01","%Y-%m-%d"),as.Date("2026-01-01","%Y-%m-%d")),
                                                         timeFormat = "%Y-%m-%d", ticks = FALSE),
                                             fluidRow(
                                               column(4,
@@ -176,7 +172,7 @@ ui <- fluidPage(
                                             sliderInput(inputId = "HadPR_seas3", label ="Private Open Season 3",
                                                         min = as.Date("2025-05-01","%Y-%m-%d"),
                                                         max = as.Date("2026-04-30","%Y-%m-%d"),
-                                                        value=c(as.Date("2026-04-30","%Y-%m-%d"),as.Date("2026-04-30","%Y-%m-%d")),
+                                                        value=c(as.Date("2026-01-01","%Y-%m-%d"),as.Date("2026-01-01","%Y-%m-%d")),
                                                         timeFormat = "%Y-%m-%d", ticks = FALSE),
                                             fluidRow(
                                               column(4,
@@ -190,7 +186,8 @@ ui <- fluidPage(
     #### Results ####
     tabPanel("Results",
              conditionalPanel(condition="$('html').hasClass('shiny-busy')",
-                              tags$div("Calculating...This will take ~45-50 min to run a set of regulations. Please do not log out or close your browser window.",id="loadmessage")), #Warning for users
+                              tags$div("Calculating...This will take ~50 min to run a set of regulations. Please do not log out or close your browser window.",id="loadmessage")), #Warning for users
+
 
              downloadButton(outputId = "downloadData", "Download"),
              actionButton("bymode", "Results by Mode"),
@@ -223,6 +220,7 @@ ui <- fluidPage(
 server <- function(input, output, session){
 
   library(magrittr)
+  library(ggplot2)
   #library(webshot)
 
   observeEvent(input$updatedat,{
@@ -239,6 +237,13 @@ server <- function(input, output, session){
                     c=c(1:nrow(.)),
                     run_name = dplyr::case_when(b != "NA" ~ b, TRUE ~ as.character(c))) %>%
       dplyr::select(run_name)
+
+    # fnames2<- as.data.frame(fnames) %>%
+    #   tidyr::separate(fnames, into = c("a", "b", "c"), sep = "_") %>%
+    #   dplyr::mutate(c = ifelse(stringr::str_detect(c, "202501"),  "NA", c),
+    #                 d=c(1:nrow(.)),
+    #                 run_name = dplyr::case_when(c != "NA" ~ c, TRUE ~ as.character(c))) %>%
+    #   dplyr::select(run_name)
 
     df <- fnames %>%
       purrr::map_df(~data.table::fread(.,stringsAsFactors=F,check.names=T,strip.white=T))
@@ -376,7 +381,19 @@ server <- function(input, output, session){
 
   output$totCatch <- plotly::renderPlotly({
 
+    # sq<- read.csv("predictions_sq_no_august.csv") %>%
+    #   dplyr::mutate(run_number = "SQ")
+    #
+    # aug<- read.csv("predictions_with_open_august.csv") %>%
+    #   dplyr::mutate(run_number = "aug")
+    #
+    # all<-read.csv("predictions_open_all.csv") %>%
+    #   dplyr::mutate(run_number = "all")
+    #
+    # dat<- sq %>% rbind(aug, all)
+
     catch_agg<- df2() %>%
+      #dat %>%
       dplyr::filter(catch_disposition %in% c("keep", "Discmortality"),
                     number_weight == "Weight") %>%
       dplyr::group_by(run_number, Category,draw_out) %>%
@@ -387,46 +404,64 @@ server <- function(input, output, session){
       dplyr::group_by(run_number, Category) %>%
       dplyr::summarise(under_acl = sum(under_acl),
                        Value = round(median(Value),0)) %>%
-      tidyr::pivot_wider(names_from = Category, values_from = c(Value, under_acl))%>%
+      tidyr::pivot_wider(names_from = Category, values_from = c(Value, under_acl))
+
+    catch_agg2<- catch_agg %>%
+      dplyr::mutate(under_acl_cod2 = dplyr::case_when(under_acl_cod < 50 ~ "Less than 50%", TRUE ~ ""),
+                    under_acl_cod2 = dplyr::case_when(under_acl_cod >= 50 & under_acl_cod < 60 ~ "50-59%", TRUE ~ under_acl_cod2),
+                    under_acl_cod2 = dplyr::case_when(under_acl_cod >= 60 & under_acl_cod < 70~ "60-69%", TRUE ~ under_acl_cod2),
+                    under_acl_cod2 = dplyr::case_when(under_acl_cod >= 70 & under_acl_cod < 80 ~ "70-79%", TRUE ~ under_acl_cod2),
+                    under_acl_cod2 = dplyr::case_when(under_acl_cod >= 80 & under_acl_cod < 90 ~ "80-89%", TRUE ~ under_acl_cod2),
+                    under_acl_cod2 = dplyr::case_when(under_acl_cod >= 90 & under_acl_cod <=100 ~ "90-100%", TRUE ~ under_acl_cod2)) %>%
+      dplyr::mutate(under_acl_had2 = dplyr::case_when(under_acl_had < 50 ~ "Less than 50%", TRUE ~ ""),
+                    under_acl_had2 = dplyr::case_when(under_acl_had >= 50 & under_acl_had < 60 ~ "50-59%", TRUE ~ under_acl_had2),
+                    under_acl_had2 = dplyr::case_when(under_acl_had >= 60 & under_acl_had < 70~ "60-69%", TRUE ~ under_acl_had2),
+                    under_acl_had2 = dplyr::case_when(under_acl_had >= 70 & under_acl_had < 80 ~ "70-79%", TRUE ~ under_acl_had2),
+                    under_acl_had2 = dplyr::case_when(under_acl_had >= 80 & under_acl_had < 90 ~ "80-89%", TRUE ~ under_acl_had2),
+                    under_acl_had2 = dplyr::case_when(under_acl_had >= 90 & under_acl_had <=100 ~ "90-100%", TRUE ~ under_acl_had2)) %>%
       dplyr::rename(`Cod Mortality`=Value_cod) %>%
-      dplyr::rename(`Haddock Mortality`=Value_had)
+      dplyr::rename(`Haddock Mortality`=Value_had) %>%
+      dplyr::ungroup()
 
-    under_50 <- ifelse(as.numeric(catch_agg$under_acl_cod) < 50, "solid_color", "gradient")
-
-    # catch_agg <- data.frame(run_number = c("SQ", "test"),
-    #                         Cod_Mortality = c(43, 130),
-    #                         Haddock_Mortality = c(810, 1099),
-    #                         under_acl_cod = c(100, 40),
-    #                         under_acl_had = c(94, 60)) %>%
+    # catch_agg <- data.frame(run_number = c("SQ","what", "test"),
+    #                         Cod_Mortality = c(43, 60, 130),
+    #                         Haddock_Mortality = c(810, 955, 1099),
+    #                         under_acl_cod2 = c("90-100%","60-69%", "Less than 50%"),
+    #                         under_acl_had2 = c("90-100%","60-69%", "Less than 50%")) %>%
     #   dplyr::rename(`Cod Mortality`=Cod_Mortality, `Haddock Mortality`=Haddock_Mortality)
 
-    p<- catch_agg %>%
-      dplyr::mutate(under_acl_cod = as.numeric(under_acl_cod)) %>%
-      ggplot2::ggplot(ggplot2::aes(x = `Cod Mortality`, y = `Haddock Mortality`, label = run_number))+
-      #geom_point(aes(label = run_number, colour = test)) +
-      #ggplot2::geom_point(ggplot2::aes(color = "red3"))+
-      ggplot2::geom_point(ggplot2::aes(colour = under_acl_cod)) +
-      ggplot2::scale_colour_gradient2("% Under Cod ACL", low = "white", high = "darkgreen", limits=c(50,100)) +
-      #ggplot2::scale_fill_manual(values = c("solid_color" = "red3", "gradient" = "transparent")) +
-      #ggrepel::geom_text_repel(ggplot2::aes(`Cod Mortality`, `Haddock Mortality`, label = run_number))+
-      #geom_text(aes(label = run_number, y = `Haddock Mortality` + 0.25))+
-      ggplot2::geom_text(ggplot2::aes(label=run_number), position=ggplot2::position_jitter(width=1,height=1), check_overlap = TRUE)+
-      #geom_text(aes(label=ifelse(`Cod Mortality`>cod_acl() & `Haddock Mortality` > had_acl(), as.character(run_number), ' '), hjust=1, vjust=1))+
+    # my_palette <- c("red3","red3","red3","red3","red3","#C5E8B7",
+    #                           "#ABE098", "#83D475","green4","darkgreen")
+
+    p<- catch_agg2 %>%
+      #dplyr::mutate(under_acl_cod = as.numeric(under_acl_cod)) %>%
+      ggplot2::ggplot(ggplot2::aes(x = `Cod Mortality`, y = `Haddock Mortality`))+
+      ggplot2::geom_point(ggplot2::aes(colour = under_acl_cod2, size = under_acl_had2)) +
+      ggplot2::scale_color_manual(values = c("50-59%" = "#A9DFBF", "60-69%" = "#7DCEA0",
+                                             "70-79%" = "#52BE80","80-89%" = "#27AE60",
+                                             "90-100%" = "#1B5E20", "Less than 50%" = "red3"))+
+      ggplot2::scale_size_manual(values = c("50-59%" = 1, "60-69%" = 1,
+                                             "70-79%" = 1,"80-89%" = 1,
+                                             "90-100%" = 1, "Less than 50%" = 1))+
+      ggplot2::labs(colour="% of simulations under cod ACL",
+                    size="% of simulations under haddock ACL")+
+      # ggplot2::scale_colour_stepsn(limits = c(0,100), n.breaks = 10,
+      #                             colors =  c("red3","red3","red3","red3","red3","#C5E8B7",
+      #                                         "#ABE098", "#83D475","green4","darkgreen"),
+      #                             name = "% Under Cod ACL")+
+      ggplot2::geom_text(ggplot2::aes(label = run_number), check_overlap = TRUE)+
       ggplot2::geom_vline( xintercept =cod_acl(), linetype="dashed")+
       ggplot2::geom_hline( yintercept =had_acl(), color="grey45")+
-      ggplot2::geom_text(ggplot2::aes(x=99, label="Cod ACL", y=1200), angle=90) +
-      ggplot2::geom_text(ggplot2::aes(x=80, label="Had ACL", y=1075))+
-
-      #ggplot2::scale_colour_gradient(low = "white", high = "darkgreen")+
+      ggplot2::annotate(geom="text", x=cod_acl(), label="Cod ACL", y=1200) +
+      ggplot2::annotate(geom="text", y=had_acl(), label="Had ACL", x=80) +
+      ggplot2::guides(size = "none")+
       ggplot2::ggtitle("Cod and Haddock Mortality")+
       ggplot2::ylab("Median Recreational Haddock Mortality (mt)")+
       ggplot2::xlab("Median Recreational Cod Mortality (mt)")
 
-    fig<- plotly::ggplotly(p,
-                           tooltip = c("x", "y", "colour")) %>%
-      plotly::style(textposition = "top center")#,
-                           #jitter = 0.4) #%>%
-      #plotly::style(textposition = "top")
+    fig<- plotly::ggplotly(p) %>% #,
+                           #tooltip = c("x", "y", "colour")) %>%
+      plotly::style(textposition = "top center")
     fig
   })
 
@@ -458,9 +493,10 @@ server <- function(input, output, session){
           dplyr::group_by(run_number, option, Category) %>%
           dplyr::summarise(Value =round(median(Value),0)) %>%
           tidyr::pivot_wider(names_from = Category, values_from = Value) %>%
-          dplyr::left_join(welfare)
+          dplyr::left_join(welfare) %>%
+          dplyr::rename(`Angler Satisfaction($)` = median_cv)
 
-        p1<- catch %>% ggplot2::ggplot(ggplot2::aes(x = median_cv, y = cod))+
+        p1<- catch %>% ggplot2::ggplot(ggplot2::aes(x = `Angler Satisfaction($)`, y = cod))+
           ggplot2::geom_point() +
           ggplot2::geom_hline( yintercept =cod_acl())+
           ggplot2::geom_text(ggplot2::aes(label=run_number), check_overlap = TRUE)+
@@ -512,9 +548,10 @@ server <- function(input, output, session){
           dplyr::group_by(run_number, option, Category) %>%
           dplyr::summarise(Value =round(median(Value),0)) %>%
           tidyr::pivot_wider(names_from = Category, values_from = Value) %>%
-          dplyr::left_join(welfare)
+          dplyr::left_join(welfare) %>%
+          dplyr::rename(`Angler Satisfaction($)` = median_cv)
 
-        p2<- catch %>% ggplot2::ggplot(ggplot2::aes(x = median_cv, y = had))+
+        p2<- catch %>% ggplot2::ggplot(ggplot2::aes(x = `Angler Satisfaction($)`, y = had))+
           ggplot2::geom_point() +
           ggplot2::geom_hline( yintercept =had_acl())+
           ggplot2::geom_text(ggplot2::aes(label=run_number), check_overlap = TRUE)+
@@ -543,13 +580,13 @@ server <- function(input, output, session){
 
       plotly::renderPlotly({
         release <-  df2() %>%
-          dplyr::filter(catch_disposition %in% c("release"),
+          dplyr::filter(catch_disposition %in% c("Discmortality"),
                         number_weight == "Weight") %>%
           dplyr::group_by(run_number, option, Category, draw_out) %>%
           dplyr::summarise(Value = sum(as.numeric(Value))) %>%
           dplyr::mutate(Value = Value * lb_to_mt()) %>%
           dplyr::group_by(run_number,option, Category) %>%
-          dplyr::summarise(release = round(median(Value),0))
+          dplyr::summarise(Discmortality = round(median(Value),0))
 
 
         catch<- df2() %>%
@@ -561,20 +598,20 @@ server <- function(input, output, session){
           dplyr::group_by(run_number, option, Category) %>%
           dplyr::summarise(Value =round(median(Value),0)) %>%
           dplyr::left_join(release) %>%
-          tidyr::pivot_wider(names_from = Category, values_from = c(Value, release))%>%
+          tidyr::pivot_wider(names_from = Category, values_from = c(Value, Discmortality))%>%
           dplyr::rename(`Cod Mortality`=Value_cod) %>%
           dplyr::rename(`Haddock Mortality`=Value_had)%>%
-          dplyr::rename(`Cod Release`=release_cod) %>%
-          dplyr::rename(`Haddock Release`=release_had)
+          dplyr::rename(`Cod Discard Mortality`=Discmortality_cod) %>%
+          dplyr::rename(`Haddock Discard Mortality`=Discmortality_had)
 
-        p3<- catch %>% ggplot2::ggplot(ggplot2::aes(x = `Cod Release`, y = `Cod Mortality`))+
+        p3<- catch %>% ggplot2::ggplot(ggplot2::aes(x = `Cod Discard Mortality`, y = `Cod Mortality`))+
           ggplot2::geom_point() +
           ggplot2::geom_hline( yintercept =cod_acl())+
           ggplot2::geom_text(ggplot2::aes(label=run_number), check_overlap = TRUE)+
           ggplot2::geom_text(ggplot2::aes(y=cod_acl(), label="Cod ACL", x=240)) +
-          ggplot2::xlab("Cod Discards (mt)")+
+          ggplot2::xlab("Cod Discard Mortality (mt)")+
           ggplot2::ylab("Total Recreational Cod Mortality (mt)")+
-          ggplot2::labs(title = "Cod Mortality (mt) compared to Total Discarded Cod (mt)",
+          ggplot2::labs(title = "Total Cod Mortality (mt) compared to Discard Mortality(mt)",
                         subtitle = "testing")+
           ggplot2::theme(legend.position = "none")
 
@@ -592,13 +629,13 @@ server <- function(input, output, session){
 
           plotly::renderPlotly({
             release <-  df2() %>%
-              dplyr::filter(catch_disposition %in% c("release"),
+              dplyr::filter(catch_disposition %in% c("Discmortality"),
                             number_weight == "Weight") %>%
               dplyr::group_by(run_number, option, Category, draw_out) %>%
               dplyr::summarise(Value = sum(as.numeric(Value))) %>%
               dplyr::mutate(Value = Value * lb_to_mt()) %>%
               dplyr::group_by(run_number,option, Category) %>%
-              dplyr::summarise(release = round(median(Value),0))
+              dplyr::summarise(Discmortality = round(median(Value),0))
 
 
             catch<- df2() %>%
@@ -610,21 +647,21 @@ server <- function(input, output, session){
               dplyr::group_by(run_number, option, Category) %>%
               dplyr::summarise(Value = round(median(Value),0)) %>%
               dplyr::left_join(release) %>%
-              tidyr::pivot_wider(names_from = Category, values_from = c(Value, release))%>%
+              tidyr::pivot_wider(names_from = Category, values_from = c(Value, Discmortality))%>%
               dplyr::rename(`Cod Mortality`=Value_cod) %>%
               dplyr::rename(`Haddock Mortality`=Value_had)%>%
-              dplyr::rename(`Cod Release`=release_cod) %>%
-              dplyr::rename(`Haddock Release`=release_had)
+              dplyr::rename(`Cod Discard Mortality`=Discmortality_cod) %>%
+              dplyr::rename(`Haddock Discard Mortality`=Discmortality_had)
 
 
-            p4<- catch %>% ggplot2::ggplot(ggplot2::aes(x = `Haddock Release` , y = `Haddock Mortality`))+
+            p4<- catch %>% ggplot2::ggplot(ggplot2::aes(x = `Haddock Discard Mortality` , y = `Haddock Mortality`))+
               ggplot2::geom_point() +
               ggplot2::geom_hline( yintercept = had_acl())+
               ggplot2::geom_text(ggplot2::aes(label=run_number), check_overlap = TRUE)+
               ggplot2::geom_text(ggplot2::aes(y=had_acl(), label="Had ACL", x=600)) +
-              ggplot2::xlab("Haddock Discards (mt)")+
+              ggplot2::xlab("Haddock Discard Mortality (mt)")+
               ggplot2::ylab("Total Recreational Haddock Mortality (mt)")+
-              ggplot2::labs(title = "Haddock Mortality (mt) compared to Total Discarded Haddock (mt)",
+              ggplot2::labs(title = "Total Haddock Mortality (mt) compared to Discard Mortality (mt)",
                             subtitle = "testing")+
               ggplot2::theme(legend.position = "none")
 
@@ -749,12 +786,13 @@ server <- function(input, output, session){
 
   predictions <- reactive({
 
-    predictions_out <- read.csv(here::here("data-raw/sq_predictions_cm.csv")) %>%
+    #test<- read.csv(here::here("output/output_help_20250106_133859.csv"))
+    predictions_out <- read.csv(here::here("data-raw/SQ_predictions_cm.csv")) %>%
       #dplyr::mutate(option = c("SQ")) %>%
       #dplyr::select(!X) %>%
-      #rbind(test) %>%
+      #rbind(predictions_out10) %>%
       rbind(pred()) %>%
-      dplyr::mutate(Value = dplyr::case_when(number_weight == "Weight" ~ Value/2205, TRUE ~ Value))
+      dplyr::mutate(Value = dplyr::case_when(number_weight == "Weight" ~ as.numeric(Value)/2205, TRUE ~ as.numeric(Value)))
     return(predictions_out)
   })
 
@@ -846,7 +884,7 @@ server <- function(input, output, session){
   catch_agg <- reactive({
 
     catch_agg<- predictions() %>%
-      #predictions_out10 %>%
+      #dat %>%
       dplyr::filter(catch_disposition %in% c("keep", "Discmortality"),
                     number_weight == "Weight") %>%
       dplyr::group_by(option, Category, draw_out) %>%
@@ -859,8 +897,8 @@ server <- function(input, output, session){
       tidyr::pivot_wider(names_from = c(option), values_from = c(Value, under_acl)) %>%
       dplyr::mutate(Category = dplyr::recode(Category, "cod" = "Cod",
                                              "had" = "Haddock")) %>%
-      dplyr::select(Category, Value_SQ, Value_alt, under_acl_alt) %>%
-      dplyr::rename(Species = Category, `SQ Catch Total Mortality (mt)` = Value_SQ,
+      dplyr::select(Category, Value_SQ, under_acl_SQ, Value_alt, under_acl_alt) %>%
+      dplyr::rename(Species = Category, `SQ Total Mortality (mt)` = Value_SQ, `SQ % Under ACL (Out of 100 runs)` = under_acl_SQ,
                     `Alternative Total Mortality (mt)` = Value_alt, `Atlernative % Under ACL (Out of 100 runs)` = under_acl_alt)
 
     return(catch_agg)
@@ -870,13 +908,13 @@ server <- function(input, output, session){
 
     print("start catch mode")
     catch_by_mode<- predictions() %>%
-      #test %>%
+      #dat %>% #test %>%
       dplyr::filter(catch_disposition %in% c("keep", "Discmortality"),
                     number_weight == "Weight") %>%
       dplyr::group_by(option, Category, draw_out, mode) %>%
       dplyr::summarise(Value = sum(Value)) %>%
       dplyr::mutate(under_acl = dplyr::case_when(Category == "cod" & Value <= 99000 ~ 1, TRUE ~ 0),
-                    under_acl = dplyr::case_when(Category == "had" & Value <= 1405000 ~ 1, TRUE ~ under_acl)) %>%
+                    under_acl = dplyr::case_when(Category == "had" & Value <= 1075000 ~ 1, TRUE ~ under_acl)) %>%
       dplyr::group_by(option, Category, mode) %>%
       dplyr::summarise(under_acl = sum(under_acl),
                        Value = median(Value)) %>%
@@ -886,7 +924,7 @@ server <- function(input, output, session){
                     mode = dplyr::recode(mode, "fh" = "For Hire",
                                          "pr" = "Private")) %>%
       dplyr::select(Category, Value_SQ, Value_alt,  mode) %>%
-      dplyr::rename(Species = Category, `SQ Catch Total Mortality (mt)` = Value_SQ,
+      dplyr::rename(Species = Category, `SQ Total Mortality (mt)` = Value_SQ,
                     `Alternative Total Mortality (mt)` = Value_alt, `Mode` = mode)
 
     return(catch_by_mode)
@@ -896,16 +934,26 @@ server <- function(input, output, session){
   which_keep_out<- reactiveVal(TRUE)
   keep_agg <- reactive({
 
+# sq<- read.csv(here::here("data-raw/sq_predictions_cm.csv"))%>%
+#   dplyr::mutate(Value = dplyr::case_when(number_weight == "Weight" ~ as.numeric(Value)/2205, TRUE ~ as.numeric(Value)))
+#  out<- read.csv(here::here("output/output_alt1_20250113_102706.csv"))%>%
+#    dplyr::mutate(Value = dplyr::case_when(number_weight == "Weight" ~ as.numeric(Value)/2205, TRUE ~ as.numeric(Value)))
+#  dat<- rbind(sq, out)
+
     keep_agg<- predictions() %>%
-      #predictions_out %>%
+      #dat %>% #redictions_out %>%
       dplyr::filter(catch_disposition %in% c("keep", "release", "Discmortality")) %>%
       dplyr::group_by(option, Category, catch_disposition, number_weight, draw_out) %>%
-      dplyr::summarise(Value = sum(Value)) %>%
+      dplyr::summarise(Value = sum(as.numeric(Value))) %>%
       dplyr::group_by(option, Category, catch_disposition, number_weight) %>%
-      dplyr::summarise(Value = median(Value)) %>%
       tidyr::pivot_wider(names_from = c(option, number_weight), values_from = Value) %>%
-      dplyr::mutate(perc_diff_num = (alt_Number-SQ_Number)/SQ_Number,
-                    perc_diff_wt = (alt_Weight-SQ_Weight)/SQ_Weight) %>%
+      dplyr::mutate(perc_diff_num = ((alt_Number-SQ_Number)/SQ_Number) * 100,
+                    perc_diff_wt = ((alt_Weight-SQ_Weight)/SQ_Weight) * 100) %>%
+      dplyr::filter(!perc_diff_num == "NA",
+                    !perc_diff_wt == "NA") %>%
+      dplyr::summarise(SQ_Number = median(SQ_Number), SQ_Weight = median(SQ_Weight),
+                       alt_Number = median(alt_Number), alt_Weight = median(alt_Weight),
+                       perc_diff_num = median(perc_diff_num), perc_diff_wt = median(perc_diff_wt)) %>%
       dplyr::select(!c(SQ_Number, SQ_Weight)) %>%
       dplyr::mutate(Category = dplyr::recode(Category, "cod" = "Cod",
                                              "had" = "Haddock"),
@@ -914,8 +962,8 @@ server <- function(input, output, session){
                                                       "release" = "Discards")) %>%
       dplyr::select(Category, catch_disposition, alt_Number, perc_diff_num, alt_Weight, perc_diff_wt) %>%
       dplyr::rename(Species = Category, Variable = catch_disposition,
-                    `Total fish (N)` = alt_Number, `Percent difference in number of fish` = perc_diff_num,
-                    `Total Weight (mt)` = alt_Weight, `Percent difference in weight of fish` = perc_diff_wt)
+                    `Total number of fish` = alt_Number, `% difference from SQ for number of fish` = perc_diff_num,
+                    `Total Weight (mt)` = alt_Weight, `% difference from SQ for weight of fish` = perc_diff_wt)
 
     return(keep_agg)
 
@@ -924,15 +972,21 @@ server <- function(input, output, session){
 
   keep_by_mode <- reactive({
     keep_by_mode<- predictions() %>%
-      #predictions_out %>%
+      #dat %>% #predictions_out %>%
       dplyr::filter(catch_disposition %in% c("keep", "release", "Discmortality")) %>%
       dplyr::group_by(option, Category, catch_disposition, number_weight, draw_out, mode) %>%
-      dplyr::summarise(Value = sum(Value)) %>%
+      dplyr::summarise(Value = sum(as.numeric(Value))) %>%
       dplyr::group_by(option, Category, catch_disposition, number_weight, mode) %>%
       dplyr::summarise(Value = median(Value)) %>%
       tidyr::pivot_wider(names_from = c(option, number_weight), values_from = Value) %>%
-      dplyr::mutate(perc_diff_num = (alt_Number-SQ_Number)/SQ_Number,
-                    perc_diff_wt = (alt_Weight-SQ_Weight)/SQ_Weight) %>%
+      dplyr::mutate(perc_diff_num = ((alt_Number-SQ_Number)/SQ_Number) * 100,
+                    perc_diff_wt = ((alt_Weight-SQ_Weight)/SQ_Weight) * 100) %>%
+      dplyr::group_by(Category, catch_disposition, mode) %>%
+      dplyr::filter(!perc_diff_num == "NA",
+                    !perc_diff_wt == "NA") %>%
+      dplyr::summarise(SQ_Number = median(SQ_Number), SQ_Weight = median(SQ_Weight),
+                       alt_Number = median(alt_Number), alt_Weight = median(alt_Weight),
+                       perc_diff_num = median(perc_diff_num), perc_diff_wt = median(perc_diff_wt)) %>%
       dplyr::select(!c(SQ_Number, SQ_Weight)) %>%
       dplyr::mutate(Category = dplyr::recode(Category, "cod" = "Cod",
                                              "had" = "Haddock"),
@@ -943,8 +997,8 @@ server <- function(input, output, session){
                                          "pr" = "Private")) %>%
       dplyr::select(Category, catch_disposition, mode, alt_Number, perc_diff_num, alt_Weight, perc_diff_wt) %>%
       dplyr::rename(Species = Category, Variable = catch_disposition,
-                    `Total fish (N)` = alt_Number, `Percent difference in number of fish` = perc_diff_num,
-                    `Total Weight (mt)` = alt_Weight, `Percent difference in weight of fish` = perc_diff_wt, `Mode` = mode)
+                    `Total Number of fish` = alt_Number, `% difference in number of fish` = perc_diff_num,
+                    `Total Weight (mt)` = alt_Weight, `% difference in weight of fish` = perc_diff_wt, `Mode` = mode)
     return(keep_by_mode)
   })
 #####################
@@ -953,18 +1007,37 @@ server <- function(input, output, session){
   which_welfare_out<- reactiveVal(TRUE)
   welfare_agg <- reactive({
 
-    welfare_agg<- predictions() %>%
-      #predictions_out %>%
-      dplyr::filter(Category %in% c("CV", "ntrips")) %>%
-      dplyr::group_by(option, Category, draw_out) %>%
-      dplyr::summarise(Value = sum(Value)) %>%
-      dplyr::group_by(option, Category) %>%
-      dplyr::summarise(Value = median(Value)) %>%
+#     sq<- read.csv(here::here("data-raw/sq_predictions_cm.csv"))
+#      out<- read.csv(here::here("predictions2.csv")) %>%
+#        dplyr::select(!X)
+#      dat<- rbind(sq, out)
+# #
+    welfare2_agg <- predictions() %>%
+      #dat %>%
+      dplyr::filter(Category =="CV")%>%
+      dplyr::group_by( draw_out, option) %>%
+      dplyr::summarise(Value = sum(as.numeric(Value))) %>%
       tidyr::pivot_wider(names_from = option, values_from = Value) %>%
-      dplyr::select(!SQ) %>%
-      dplyr::mutate(Category = dplyr::recode(Category, CV = "Change in Angler Satisfaction ($)",
-                                             ntrips = "Angler Trips (N)")) %>%
-      tidyr::pivot_wider(names_from = Category, values_from = alt)
+      dplyr::mutate(Value_diff = SQ - alt) %>%
+      dplyr::filter(!Value_diff == "NA") %>%
+      dplyr::ungroup() %>%
+      dplyr::summarise(median_cv = median(Value_diff)) %>%
+      dplyr::rename(`Relative change in Angler Satisfaction ($)` = median_cv)
+
+
+    trips_agg<- predictions() %>%
+      #dat %>%
+      dplyr::filter(Category =="ntrips" & option == "alt") %>%
+      dplyr::group_by( draw_out) %>%
+      dplyr::summarise(Value = sum(as.numeric(Value))) %>%
+      dplyr::summarise(Value = median(Value)) %>%
+      dplyr::select(Value) %>%
+      dplyr::ungroup() %>%
+      dplyr::rename(`Total number of Angler Trips` = Value) %>%
+      dplyr::select(`Total number of Angler Trips`)
+
+
+    welfare_agg<- cbind(welfare2_agg, trips_agg)
 
     return(welfare_agg)
 
@@ -972,21 +1045,37 @@ server <- function(input, output, session){
 
 
   welfare_by_mode <- reactive({
-    welfare_by_mode<- predictions() %>%
-      #predictions_out10 %>%
-      dplyr::filter(Category %in% c("CV", "ntrips")) %>%
-      dplyr::group_by(option, Category, draw_out, mode) %>%
-      dplyr::summarise(Value = sum(Value)) %>%
-      dplyr::group_by(option, Category, mode) %>%
-      dplyr::summarise(Value = median(Value)) %>%
+
+    welfare_by_mode2 <- predictions() %>%
+      #predictions_out %>%
+      dplyr::filter(Category == "CV") %>%
+      dplyr::group_by( draw_out, option, mode) %>%
+      dplyr::summarise(Value = sum(as.numeric(Value))) %>%
       tidyr::pivot_wider(names_from = option, values_from = Value) %>%
-      dplyr::select(!SQ) %>%
-      dplyr::mutate(Category = dplyr::recode(Category, CV = "Change in Angler Satisfaction ($)",
-                                             ntrips = "Angler Trips (N)"),
-                    mode = dplyr::recode(mode, "fh" = "For Hire",
-                                         "pr" = "Private")) %>%
-      tidyr::pivot_wider(names_from = Category, values_from = alt) %>%
-      dplyr::rename(`Mode` = mode)
+      dplyr::mutate(Value_diff = SQ - alt) %>%
+      dplyr::filter(!Value_diff == "NA") %>%
+      dplyr::group_by(mode) %>%
+      dplyr::summarise(median_cv = median(Value_diff)) %>%
+      dplyr::rename(`Relative change in Angler Satisfaction ($)` = median_cv) %>%
+      dplyr::ungroup()
+
+
+    trips_by_mode<- predictions() %>%
+      #predictions_out %>%
+      dplyr::filter(Category =="ntrips" & option == "alt") %>%
+      dplyr::group_by(draw_out, mode) %>%
+      dplyr::summarise(Value = sum(as.numeric(Value))) %>%
+      dplyr::group_by( mode) %>%
+      dplyr::summarise(Value = median(Value)) %>%
+      dplyr::select(Value) %>%
+      dplyr::ungroup() %>%
+      dplyr::rename(`Total number of Angler Trips` = Value) %>%
+      dplyr::select(`Total number of Angler Trips`)
+
+
+    welfare_by_mode<- cbind(welfare_by_mode2, trips_by_mode) %>%
+      dplyr::mutate(mode = dplyr::recode(mode, "fh" = "For Hire",
+                                         "pr" = "Private"))
     return(welfare_by_mode)
   })
 
@@ -1083,10 +1172,31 @@ server <- function(input, output, session){
   output$downloadData <- downloadHandler(
     filename = function(){"RecDSToutput.xlsx"},
     content = function(filename) {
-      df_list <- list(Regulations=regulations(), Catch_Mortality_aggregated = catch_agg(), Catch_Mortality_by_mode = catch_by_mode(),
+      df_list <- list(Regulations=regs_agg(), Catch_Mortality_aggregated = catch_agg(), Catch_Mortality_by_mode = catch_by_mode(),
                       Keep_Release_aggregated = keep_agg(), Keep_Release_by_mode = keep_by_mode(),
-                      Satisfaction_trips_aggregated = welfare_agg(), Satisfaction_trips_by_mode = welfare_mode())
-      openxlsx::write.xlsx(x = df_list , file = filename, row.names = FALSE)
+                      Satisfaction_trips_aggregated = welfare_agg(), Satisfaction_trips_by_mode = welfare_by_mode())
+      openxlsx::write.xlsx(append = TRUE, x = df_list , file = filename, row.names = FALSE)
+      # wb <- openxlsx::createWorkbook()
+      # sheet_1 <- xlsx::createSheet(wb, "Regulations")
+      #
+      # sheet_2 <- xlsx::createSheet(wb, "Catch_Mortality_aggregated")
+      #
+      # openxlsx::addDataFrame(
+      #   regulations(),
+      #   sheet         = sheet_1,
+      #   row.names     = FALSE
+      # )
+      #
+      # openxlsx::addDataFrame(
+      #   catch_agg(),
+      #   sheet         = sheet_2,
+      #   row.names     = FALSE
+      # )
+      #
+      # openxlsx::saveWorkbook(wb, file)
+
+
+      #openxlsx::saveWorkbook(g,filename)
     })
 
 }
