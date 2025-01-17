@@ -186,7 +186,8 @@ ui <- fluidPage(
     #### Results ####
     tabPanel("Results",
              conditionalPanel(condition="$('html').hasClass('shiny-busy')",
-                              tags$div("Calculating...This will take ~50 min.",id="loadmessage")), #Warning for users
+                              tags$div("Calculating...This will take ~50 min to run a set of regulations. Please do not log out or close your browser window.",id="loadmessage")), #Warning for users
+
 
              downloadButton(outputId = "downloadData", "Download"),
              actionButton("bymode", "Results by Mode"),
