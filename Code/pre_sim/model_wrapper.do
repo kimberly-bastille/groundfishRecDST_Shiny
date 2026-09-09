@@ -43,9 +43,7 @@
 
  THESE GLOBALS AND REGULATIONS MUST BE UPDATED EVERY YEAR (see Section A).
 
- Note:         Suspected mislabeling (flagged, code unchanged): in Section E the
-               $b2list and $sizelist macros appear to point at swapped files
-               ($b2list -> mrip_size.dta, $sizelist -> mrip_size_b2.dta).
+
 *******************************************************************************/
 
 set varabbrev on
