@@ -2,7 +2,9 @@
  Script:       refval_tools.do
  Purpose:      Comparison tooling for the refactor validation harness in
                model_wrapper.do (REFACTOR_03, Pair A: calibration_catch_per_trip
-               part1 / part2). Defines the programs the harness blocks call:
+               part1 / part2; REFACTOR_04c, Pair B: catch_at_length
+               calibration / projection). Defines the programs the harness
+               blocks call:
                  refval_stamp        timestamp for report file names
                  refval_capture      fingerprint (and optionally copy aside) the
                                      outputs of one run (side = new or old)
@@ -19,9 +21,16 @@
                  refval_results_<part>_<ts>.dta          per-file verdicts
                  refval_report_<part>_<ts>.log           the human-readable report
  Dependencies: Base Stata 14 or later (strrpos, strL in postfile). Commands used:
-               cf, datasignature, checksum, copy, postfile, import excel.
+               cf, datasignature, checksum, copy, postfile, import excel,
+               import delimited.
  Comparison:   Exact match only (CLAUDE.md constraint 3). No tolerance.
- Retirement:   Delete this file, the .gitignore beside it, and the three harness
+               .dta / .xlsx: PASS needs identical N, k, schema, fingerprint
+               and a clean cf on the copies. .csv: PASS is decided by a
+               raw-byte match (file length and checksum), which is the
+               strongest test for a text file the R side reads as-is; the
+               imported-data checks and cf still run and are reported, as
+               diagnostics for a FAIL (user decision, REFACTOR_04b section 9).
+ Retirement:   Delete this file, the .gitignore beside it, and the five harness
                blocks in model_wrapper.do (REFACTOR_06).
 *******************************************************************************/
 
@@ -76,15 +85,20 @@ end ;
  -import excel, first-, which is exactly how part1 re-imports its own xlsx
  before saving the .dta, and is the content the R copula step reads. The
  raw xlsx bytes are deliberately not compared: xlsx files carry metadata
- that is not data.
+ that is not data. A .csv is loaded with -import delimited-, with no
+ options, which is how catch_at_length_projection.do reads the calibration
+ CSVs; for .csv files the raw bytes ARE compared, by refval_compare.
  Parameters:
-   file : full path of a .dta or .xlsx file
+   file : full path of a .dta, .xlsx or .csv file
 ******************************************************************************/
 capture program drop refval_load ;
 program define refval_load ;
     syntax , FILE(string) ;
     if lower(substr(`"`file'"', -5, 5)) == ".xlsx" {;
         import excel using `"`file'"', clear first ;
+    };
+    else if lower(substr(`"`file'"', -4, 4)) == ".csv" {;
+        import delimited using `"`file'"', clear ;
     };
     else {;
         use `"`file'"', clear ;
@@ -206,25 +220,40 @@ end ;
 /******************************************************************************
  refval_compare
  Reads the new and old fingerprint files for one part and timestamp, merges
- them by file name, and marks each file PASS only if ALL of these hold:
-   present on both sides, same N, same k, same schema, same fingerprint,
-   and, where both sides were copied aside, -cf _all- finds zero differences
-   (old copy in memory, new copy as using; the schema check already
-   guarantees the two variable lists are identical, so one direction is
-   complete).
+ them by file name, and marks each file PASS or FAIL:
+   .dta / .xlsx : PASS only if ALL of these hold: present on both sides,
+                  same N, same k, same schema, same fingerprint, and, where
+                  both sides were copied aside, -cf _all- finds zero
+                  differences (old copy in memory, new copy as using; the
+                  schema check already guarantees the two variable lists
+                  are identical, so one direction is complete).
+   .csv         : PASS only if the raw bytes match (same file length and
+                  same checksum). The imported-data checks and cf are still
+                  run and reported, so a FAIL says which variable differs.
  Writes $refval_cd/refval_results_<part>_<ts>.dta (one row per file) and
  $refval_cd/refval_report_<part>_<ts>.log (this program's console output,
  including cf's per-variable mismatch counts). Returns r(pass) = 1 if every
  file passed, r(nfail), and r(report).
  Parameters:
-   part    : as passed to refval_capture
-   ts      : as passed to refval_capture
-   verbose : 0 (default) cf prints per-variable mismatch counts;
-             1 cf also lists every differing observation (can be huge)
+   part     : as passed to refval_capture
+   ts       : as passed to refval_capture
+   verbose  : 0 (default) cf prints per-variable mismatch counts;
+              1 cf also lists every differing observation (can be huge)
+   newlabel : optional, name of the refactored script, for the report header.
+              Defaults to the Pair A name calibration_catch_per_trip_<part>_refactored.do
+   oldlabel : optional, name of the original script, for the report header.
+              Defaults to the Pair A name calibration_catch_per_trip_<part>.do
 ******************************************************************************/
 capture program drop refval_compare ;
 program define refval_compare, rclass ;
-    syntax , PART(string) TS(string) [VERBOSE(integer 0)] ;
+    syntax , PART(string) TS(string) [VERBOSE(integer 0) NEWLABEL(string) OLDLABEL(string)] ;
+
+    if "`newlabel'" == "" {;
+        local newlabel "calibration_catch_per_trip_`part'_refactored.do" ;
+    };
+    if "`oldlabel'" == "" {;
+        local oldlabel "calibration_catch_per_trip_`part'.do" ;
+    };
 
     local report "$refval_cd/refval_report_`part'_`ts'.log" ;
     capture log close refval ;
@@ -235,8 +264,8 @@ program define refval_compare, rclass ;
     di as text "ndraws        : $ndraws" ;
     di as text "Stata         : `c(stata_version)' `c(flavor)' `c(machine_type)'  rng=`c(rng_current)'" ;
     di as text "refval_cd     : $refval_cd" ;
-    di as text "new = calibration_catch_per_trip_`part'_refactored.do" ;
-    di as text "old = calibration_catch_per_trip_`part'.do (ran last; production paths hold old output)" ;
+    di as text "new = `newlabel'" ;
+    di as text "old = `oldlabel' (ran last, so production paths hold old output)" ;
 
     /* new-side fingerprints, suffixed _new */
     use "$refval_cd/refval_fp_`part'_new_`ts'.dta", clear ;
@@ -307,17 +336,26 @@ program define refval_compare, rclass ;
         };
     };
 
+    /* raw-byte match: length and checksum as recorded by refval_capture */
+    quietly gen byte bytes_ok = present_ok & (filelen_old == filelen_new)
+                                & (checksum_old == checksum_new) ;
+    quietly gen byte is_csv = lower(substr(name, -4, 4)) == ".csv" ;
+
     quietly gen str4 status = "PASS" ;
     quietly replace status = "FAIL" if !present_ok | !N_ok | !k_ok | !schema_ok | !sig_ok ;
     quietly replace status = "FAIL" if cf_run == 1 & cf_rc != 0 ;
+    /* .csv: the raw-byte match decides on its own, either way (REFACTOR_04b section 9) */
+    quietly replace status = cond(bytes_ok, "PASS", "FAIL") if is_csv ;
 
-    order name status present_ok N_old N_new N_ok k_old k_new k_ok schema_ok
-          sig_ok cf_run cf_rc cf_ndiff sig_old sig_new filelen_old filelen_new
-          checksum_old checksum_new copied_old copied_new schema_old schema_new ;
+    order name status is_csv bytes_ok present_ok N_old N_new N_ok k_old k_new k_ok
+          schema_ok sig_ok cf_run cf_rc cf_ndiff sig_old sig_new filelen_old
+          filelen_new checksum_old checksum_new copied_old copied_new
+          schema_old schema_new ;
     sort name ;
 
     di _n as text "----- per-file results -----" ;
-    list name status N_old N_new k_old k_new schema_ok sig_ok cf_run cf_rc cf_ndiff,
+    di as text "(status for .csv files is decided by bytes_ok alone, the other columns are diagnostics)" ;
+    list name status is_csv bytes_ok N_old N_new k_old k_new schema_ok sig_ok cf_run cf_rc cf_ndiff,
          noobs sep(0) string(40) abbreviate(10) ;
 
     /* spell out any schema mismatch so the report says which variable changed */
@@ -349,7 +387,7 @@ program define refval_compare, rclass ;
         di as result "===== `part' OVERALL: PASS (exact match on every file) =====" ;
     };
     else {;
-        di as error  "===== `part' OVERALL: FAIL (`nfail' file(s) differ; see rows above) =====" ;
+        di as error  "===== `part' OVERALL: FAIL (`nfail' file(s) differ, see rows above) =====" ;
     };
     di as text "results dataset: $refval_cd/refval_results_`part'_`ts'.dta" ;
     di as text "this report    : `report'" ;
