@@ -20,9 +20,10 @@
                  refval_fp_<part>_<side>_<ts>.dta        one row per output file
                  refval_results_<part>_<ts>.dta          per-file verdicts
                  refval_report_<part>_<ts>.log           the human-readable report
- Dependencies: Base Stata 14 or later (strrpos, strL in postfile). Commands used:
-               cf, datasignature, checksum, copy, postfile, import excel,
-               import delimited.
+ Dependencies: Base Stata 14 or later (strrpos, strL variables). Commands used:
+               cf, datasignature, checksum, copy, import excel,
+               import delimited. (postfile is deliberately NOT used: it cannot
+               write strL, and the schema column needs strL.)
  Comparison:   Exact match only (CLAUDE.md constraint 3). No tolerance.
                .dta / .xlsx: PASS needs identical N, k, schema, fingerprint
                and a clean cf on the copies. .csv: PASS is decided by a
@@ -171,10 +172,25 @@ program define refval_capture ;
              [COPYFILES(string asis)] ;
 
     local fpfile "$refval_cd/refval_fp_`part'_`side'_`ts'.dta" ;
-    tempname fp ;
-    postfile `fp' str100 name str8 side double N double k str100 sig
-                  strL schema double filelen double checksum byte copied
-                  using "`fpfile'", replace ;
+
+    /* One row per file is accumulated in memory and saved at the end.
+       schema must be strL (a wide file's schema can exceed the 2045-character
+       str# limit) and postfile cannot write strL, so rows are added with
+       set obs / replace. The fingerprinting of each file loads that file into
+       memory; preserve/restore keeps the accumulator across that. */
+    clear ;
+    quietly {;
+        set obs 0 ;
+        gen str100 name = "" ;
+        gen str8 side = "" ;
+        gen double N = . ;
+        gen double k = . ;
+        gen str100 sig = "" ;
+        gen strL schema = "" ;
+        gen double filelen = . ;
+        gen double checksum = . ;
+        gen byte copied = . ;
+    };
 
     foreach f of local files {;
         refval_basename , file(`"`f'"') ;
@@ -185,36 +201,55 @@ program define refval_capture ;
         capture confirm file `"`f'"' ;
         if _rc {;
             di as error "refval_capture: `side' output not found: `f'" ;
-            post `fp' ("`name'") ("`side'") (.) (.) ("MISSING") ("") (.) (.) (0) ;
-            continue ;
+            local N = . ;
+            local k = . ;
+            local sig "MISSING" ;
+            local schema "" ;
+            local flen = . ;
+            local csum = . ;
+            local copied = 0 ;
         };
+        else {;
+            quietly checksum `"`f'"' ;
+            local flen = r(filelen) ;
+            local csum = r(checksum) ;
 
-        quietly checksum `"`f'"' ;
-        local flen = r(filelen) ;
-        local csum = r(checksum) ;
+            preserve ;
+            refval_fingerprint , file(`"`f'"') ;
+            local N = r(N) ;
+            local k = r(k) ;
+            local sig "`r(sig)'" ;
+            local schema `"`r(schema)'"' ;
+            restore ;
 
-        refval_fingerprint , file(`"`f'"') ;
-        local N = r(N) ;
-        local k = r(k) ;
-        local sig "`r(sig)'" ;
-        local schema `"`r(schema)'"' ;
-
-        /* copy aside only if this file is in copyfiles() */
-        local copied = 0 ;
-        foreach c of local copyfiles {;
-            if `"`c'"' == `"`f'"' {;
-                local copied = 1 ;
+            /* copy aside only if this file is in copyfiles() */
+            local copied = 0 ;
+            foreach c of local copyfiles {;
+                if `"`c'"' == `"`f'"' {;
+                    local copied = 1 ;
+                };
+            };
+            if `copied' {;
+                copy `"`f'"' "$refval_cd/`stem'_`side'.`ext'", replace ;
             };
         };
-        if `copied' {;
-            copy `"`f'"' "$refval_cd/`stem'_`side'.`ext'", replace ;
-        };
 
-        post `fp' ("`name'") ("`side'") (`N') (`k') ("`sig'") (`"`schema'"')
-                  (`flen') (`csum') (`copied') ;
+        quietly {;
+            set obs `=_N + 1' ;
+            replace name     = "`name'"       in `=_N' ;
+            replace side     = "`side'"       in `=_N' ;
+            replace N        = `N'            in `=_N' ;
+            replace k        = `k'            in `=_N' ;
+            replace sig      = "`sig'"        in `=_N' ;
+            replace schema   = `"`schema'"'   in `=_N' ;
+            replace filelen  = `flen'         in `=_N' ;
+            replace checksum = `csum'         in `=_N' ;
+            replace copied   = `copied'       in `=_N' ;
+        };
         di as text "refval_capture `side': `name'  N=`N' k=`k' sig=`sig' copied=`copied'" ;
     };
-    postclose `fp' ;
+    quietly save "`fpfile'", replace ;
+    clear ;
 end ;
 
 /******************************************************************************
