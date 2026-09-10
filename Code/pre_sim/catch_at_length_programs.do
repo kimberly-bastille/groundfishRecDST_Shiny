@@ -1,8 +1,9 @@
 /*******************************************************************************
  Script:       catch_at_length_programs.do
- Status:       Shared programs for the REFACTORED catch-at-length scripts
-               (catch_at_length_calibration_refactored.do and
-               catch_at_length_projection_refactored.do). Each of those files
+ Status:       Shared programs for the catch-at-length scripts
+               (catch_at_length_calibration.do and catch_at_length_projection.do,
+               the refactored versions, production since Phase 6 Part A,
+               REFACTOR_06a). Each of those files
                loads this one at its top with
                  do "$input_code_cd/catch_at_length_programs.do"
                so model_wrapper.do needs no change. It is safe to load more
@@ -11,6 +12,8 @@
                calibration and projection scripts:
                  fit_gamma_by_domain   original cal 507-601 / proj 551-660
                  truncate_to_observed  original cal 648-658 / proj 717-726
+               (line numbers in catch_at_length_calibration_old.do and
+               catch_at_length_projection_old.do, the retired originals)
                Each body is the original loop verbatim with the variable names
                that differed between the two copies turned into parameters
                (see REFACTOR_04_duplication_pairB.md, X-B1 and X-B2).
@@ -19,8 +22,8 @@
  Dependencies: Called with the data the two scripts already have in memory.
                fit_gamma_by_domain consumes the RNG (rgamma); callers must
                have set the seed, as both scripts do at their top.
- Pipeline:     Loaded by steps 9 and 10 of model_wrapper.do via the two
-               _refactored files. Not run on its own.
+ Pipeline:     Loaded by steps 9 and 10 of model_wrapper.do via those two
+               files. Not run on its own.
 *******************************************************************************/
 
 #delimit ;

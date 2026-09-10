@@ -31,8 +31,12 @@
                strongest test for a text file the R side reads as-is; the
                imported-data checks and cf still run and are reported, as
                diagnostics for a FAIL (user decision, REFACTOR_04b section 9).
- Retirement:   Delete this file, the .gitignore beside it, and the five harness
-               blocks in model_wrapper.do (REFACTOR_06).
+ Retirement:   Phase 6 Part A (REFACTOR_06a) made the refactored scripts the
+               production scripts and kept the originals as *_old.do. "new"
+               below now means the production script and "old" the retired
+               _old.do script; the harness runs old FIRST and new LAST.
+               Phase 6 Part B deletes this file, the .gitignore beside it,
+               the five harness blocks in model_wrapper.do and the _old files.
 *******************************************************************************/
 
 #delimit ;
@@ -159,7 +163,7 @@ end ;
  which refval_compare reports as FAIL.
  Parameters:
    part      : label used in output file names, e.g. part1 or part2
-   side      : new (the _refactored run) or old (the original run)
+   side      : new (the production script's run) or old (the retired _old.do run)
    ts        : timestamp from refval_stamp, shared by both sides
    files     : whitespace-separated list of DOUBLE-QUOTED full paths to
                fingerprint
@@ -274,20 +278,20 @@ end ;
    ts       : as passed to refval_capture
    verbose  : 0 (default) cf prints per-variable mismatch counts;
               1 cf also lists every differing observation (can be huge)
-   newlabel : optional, name of the refactored script, for the report header.
-              Defaults to the Pair A name calibration_catch_per_trip_<part>_refactored.do
-   oldlabel : optional, name of the original script, for the report header.
-              Defaults to the Pair A name calibration_catch_per_trip_<part>.do
+   newlabel : optional, name of the production (refactored) script, for the
+              report header. Defaults to calibration_catch_per_trip_<part>.do
+   oldlabel : optional, name of the retired original script, for the report
+              header. Defaults to calibration_catch_per_trip_<part>_old.do
 ******************************************************************************/
 capture program drop refval_compare ;
 program define refval_compare, rclass ;
     syntax , PART(string) TS(string) [VERBOSE(integer 0) NEWLABEL(string) OLDLABEL(string)] ;
 
     if "`newlabel'" == "" {;
-        local newlabel "calibration_catch_per_trip_`part'_refactored.do" ;
+        local newlabel "calibration_catch_per_trip_`part'.do" ;
     };
     if "`oldlabel'" == "" {;
-        local oldlabel "calibration_catch_per_trip_`part'.do" ;
+        local oldlabel "calibration_catch_per_trip_`part'_old.do" ;
     };
 
     local report "$refval_cd/refval_report_`part'_`ts'.log" ;
@@ -299,8 +303,8 @@ program define refval_compare, rclass ;
     di as text "ndraws        : $ndraws" ;
     di as text "Stata         : `c(stata_version)' `c(flavor)' `c(machine_type)'  rng=`c(rng_current)'" ;
     di as text "refval_cd     : $refval_cd" ;
-    di as text "new = `newlabel'" ;
-    di as text "old = `oldlabel' (ran last, so production paths hold old output)" ;
+    di as text "new = `newlabel' (production script, ran last, so production paths hold new output)" ;
+    di as text "old = `oldlabel' (retired original, ran first)" ;
 
     /* new-side fingerprints, suffixed _new */
     use "$refval_cd/refval_fp_`part'_new_`ts'.dta", clear ;
