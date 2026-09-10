@@ -348,11 +348,15 @@ if `validate_catch_per_trip1' {
 	 blocks are kept identical on purpose.
 	**************************************/
 	local refval_rng0 `c(rngstate)'
+	/* the sort RNG (tie order of unstable sorts and merges) is separate from
+	   the main RNG and is saved/restored too, so both runs break ties identically */
+	local refval_sort0 `c(sortrngstate)'
 
 	do "$input_code_cd\calibration_catch_per_trip_part1_refactored.do"
 	refval_capture , part(part1) side(new) ts(`refval_ts') files(`refval_p1_files') copyfiles(`refval_p1_files')
 
 	set rngstate `refval_rng0'
+	set sortrngstate `refval_sort0'
 	do "$input_code_cd\calibration_catch_per_trip_part1.do"
 	refval_capture , part(part1) side(old) ts(`refval_ts') files(`refval_p1_files') copyfiles(`refval_p1_files')
 
@@ -414,11 +418,15 @@ if `validate_catch_per_trip2' {
 	 exactly the state it would have had without the harness.
 	**************************************/
 	local refval_rng0 `c(rngstate)'
+	/* the sort RNG (tie order of unstable sorts and merges) is separate from
+	   the main RNG and is saved/restored too, so both runs break ties identically */
+	local refval_sort0 `c(sortrngstate)'
 
 	do "$input_code_cd\calibration_catch_per_trip_part2_refactored.do"
 	refval_capture , part(part2) side(new) ts(`refval_ts') files(`refval_p2_files') copyfiles(`refval_p2_copy')
 
 	set rngstate `refval_rng0'
+	set sortrngstate `refval_sort0'
 	do "$input_code_cd\calibration_catch_per_trip_part2.do"
 	refval_capture , part(part2) side(old) ts(`refval_ts') files(`refval_p2_files') copyfiles(`refval_p2_copy')
 
@@ -496,11 +504,15 @@ if `validate_catch_at_length_cal' {
 	 harness paths are absolute.
 	**************************************/
 	local refval_rng0 `c(rngstate)'
+	/* the sort RNG (tie order of unstable sorts and merges) is separate from
+	   the main RNG and is saved/restored too, so both runs break ties identically */
+	local refval_sort0 `c(sortrngstate)'
 
 	do "$input_code_cd\catch_at_length_calibration_refactored.do"
 	refval_capture , part(cal) side(new) ts(`refval_ts') files(`refval_cal_files') copyfiles(`refval_cal_files')
 
 	set rngstate `refval_rng0'
+	set sortrngstate `refval_sort0'
 	do "$input_code_cd\catch_at_length_calibration.do"
 	refval_capture , part(cal) side(old) ts(`refval_ts') files(`refval_cal_files') copyfiles(`refval_cal_files')
 
@@ -559,11 +571,15 @@ if `validate_catch_at_length_proj' {
 	 see the cal block above for why this is redundant but kept.
 	**************************************/
 	local refval_rng0 `c(rngstate)'
+	/* the sort RNG (tie order of unstable sorts and merges) is separate from
+	   the main RNG and is saved/restored too, so both runs break ties identically */
+	local refval_sort0 `c(sortrngstate)'
 
 	do "$input_code_cd\catch_at_length_projection_refactored.do"
 	refval_capture , part(proj) side(new) ts(`refval_ts') files(`refval_proj_files') copyfiles(`refval_proj_files')
 
 	set rngstate `refval_rng0'
+	set sortrngstate `refval_sort0'
 	do "$input_code_cd\catch_at_length_projection.do"
 	refval_capture , part(proj) side(old) ts(`refval_ts') files(`refval_proj_files') copyfiles(`refval_proj_files')
 
