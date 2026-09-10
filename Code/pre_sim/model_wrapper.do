@@ -207,24 +207,29 @@ if `proto' {
 
 * === BEGIN REFACTOR VALIDATION HARNESS (config) ===
 /************************************
- Refactor validation harness (REFACTOR_03, Pair A; REFACTOR_04c, Pair B).
+ Refactor validation harness (REFACTOR_03, Pair A; REFACTOR_04c, Pair B;
+ retirement Part A in REFACTOR_06a).
+ Since Phase 6 Part A the refactored scripts ARE the production scripts,
+ under their plain names (calibration_catch_per_trip_part1.do / _part2.do,
+ catch_at_length_calibration.do / _projection.do). The pre-refactor
+ originals are kept byte-identical under an _old suffix for comparison.
  With a validate_* toggle set to 1, the matching harness block in Section E
- runs the _refactored version of that step FIRST, then the ORIGINAL version,
- copies both sets of outputs into $refval_cd, and compares them exactly
- (cf + datasignature for .dta/.xlsx; raw-byte match for .csv).
- The original runs last, so production paths hold original output and the
- rest of the pipeline is unaffected. A validate_* toggle supersedes the
- step's own toggle above: the harness switches that toggle off after it has
- run the original itself, so nothing runs a third time.
- What to run and where results land: REFACTOR_03_harness_pairA.md (Pair A)
- and REFACTOR_04c_harness_pairB.md (Pair B).
- Remove this block, the four Section E blocks, and Code/refactor_validation/
- at retirement (REFACTOR_06).
+ runs the retired _old version of that step FIRST, then the production
+ version, copies both sets of outputs into $refval_cd, and compares them
+ exactly (cf + datasignature for .dta/.xlsx; raw-byte match for .csv).
+ The production version runs last, so production paths hold its output and
+ the rest of the pipeline consumes exactly what a harness-free run would.
+ A validate_* toggle supersedes the step's own toggle above: the harness
+ has already run the production version, so it switches that toggle off
+ and nothing runs a third time.
+ What to run and where results land: REFACTOR_06a_retirement_partA.md.
+ Phase 6 Part B removes this block, the four Section E blocks, the four
+ _old files and Code/refactor_validation/.
 **************************************/
-local validate_catch_per_trip1 = 1		// 1 = compare part1 original vs _refactored (Pair A)
-local validate_catch_per_trip2 = 1		// 1 = compare part2 original vs _refactored (Pair A)
-local validate_catch_at_length_cal = 1	// 1 = compare catch_at_length_calibration original vs _refactored (Pair B, step 9)
-local validate_catch_at_length_proj = 1	// 1 = compare catch_at_length_projection original vs _refactored (Pair B, step 10)
+local validate_catch_per_trip1 = 1		// 1 = compare part1 _old vs production (Pair A)
+local validate_catch_per_trip2 = 1		// 1 = compare part2 _old vs production (Pair A)
+local validate_catch_at_length_cal = 1	// 1 = compare catch_at_length_calibration _old vs production (Pair B, step 9)
+local validate_catch_at_length_proj = 1	// 1 = compare catch_at_length_projection _old vs production (Pair B, step 10)
 local refval_copy_draws = $ndraws		// part2: how many calib_catch_draws_<i>.dta to copy aside for cf.
 										//   Every draw is fingerprinted regardless; lower this only if disk is tight.
 local refval_cf_verbose = 0				// 1 = cf also lists every differing observation (large logs)
@@ -329,7 +334,7 @@ if `draw_angler_preferences' {
 		//a) compute mean catch-per-trip and standard error, imputing standard errors from historical data when they are missing.
 * === BEGIN REFACTOR VALIDATION HARNESS (calibration_catch_per_trip part1) ===
 if `validate_catch_per_trip1' {
-	di "REFVAL part1: running _refactored, then original, then comparing"
+	di "REFVAL part1: running _old (retired original), then production version, then comparing"
 	refval_stamp
 	local refval_ts "`r(ts)'"
 
@@ -341,32 +346,33 @@ if `validate_catch_per_trip1' {
 	local refval_p1_files `"`refval_p1_files' "$misc_data_cd\mrip_catch_by_mode_season.dta""'
 
 	/************************************
-	 RNG state is saved before the new run and restored before the original,
-	 so both runs start from the same state AND the original starts from
-	 exactly the state it would have had without the harness. Part1 sets its
-	 own seed, so this only matters for part2 (REFACTOR_00 O-2); the two
-	 blocks are kept identical on purpose.
+	 RNG state is saved before the first (_old) run and restored before the
+	 production run, so both runs start from the same state AND the production
+	 run starts from exactly the state it would have had without the harness.
+	 Part1 sets its own seed, so this only matters for part2 (REFACTOR_00 O-2);
+	 the two blocks are kept identical on purpose.
 	**************************************/
 	local refval_rng0 `c(rngstate)'
 	/* the sort RNG (tie order of unstable sorts and merges) is separate from
 	   the main RNG and is saved/restored too, so both runs break ties identically */
 	local refval_sort0 `c(sortrngstate)'
 
-	do "$input_code_cd\calibration_catch_per_trip_part1_refactored.do"
-	refval_capture , part(part1) side(new) ts(`refval_ts') files(`refval_p1_files') copyfiles(`refval_p1_files')
+	do "$input_code_cd\calibration_catch_per_trip_part1_old.do"
+	refval_capture , part(part1) side(old) ts(`refval_ts') files(`refval_p1_files') copyfiles(`refval_p1_files')
 
 	set rngstate `refval_rng0'
 	set sortrngstate `refval_sort0'
 	do "$input_code_cd\calibration_catch_per_trip_part1.do"
-	refval_capture , part(part1) side(old) ts(`refval_ts') files(`refval_p1_files') copyfiles(`refval_p1_files')
+	refval_capture , part(part1) side(new) ts(`refval_ts') files(`refval_p1_files') copyfiles(`refval_p1_files')
 
-	refval_compare , part(part1) ts(`refval_ts') verbose(`refval_cf_verbose')
+	refval_compare , part(part1) ts(`refval_ts') verbose(`refval_cf_verbose') ///
+		newlabel(calibration_catch_per_trip_part1.do) oldlabel(calibration_catch_per_trip_part1_old.do)
 	local refval_pass = r(pass)
 	local refval_report "`r(report)'"
 	if `refval_pass' di as result "REFVAL part1: PASS -- report: `refval_report'"
 	else di as error "REFVAL part1: FAIL -- see `refval_report'"
 
-	/* the original already ran (last), so production paths hold original output: skip step 5a */
+	/* the production version already ran (last), so production paths hold its output: skip step 5a */
 	local catch_per_trip1 = 0
 }
 * === END REFACTOR VALIDATION HARNESS (calibration_catch_per_trip part1) ===
@@ -389,7 +395,7 @@ if `copula_in_R' {
 		//c) generate estimates of simulated total harvest based on random draws of catch-per-trip and directed trips
 * === BEGIN REFACTOR VALIDATION HARNESS (calibration_catch_per_trip part2) ===
 if `validate_catch_per_trip2' {
-	di "REFVAL part2: running _refactored, then original, then comparing ($ndraws draws)"
+	di "REFVAL part2: running _old (retired original), then production version, then comparing ($ndraws draws)"
 
 	/* part2 needs the copula output for every draw; stop here if any is missing */
 	forvalues i = 1/$ndraws {
@@ -412,31 +418,32 @@ if `validate_catch_per_trip2' {
 	}
 
 	/************************************
-	 RNG state is saved before the new run and restored before the original.
-	 Part2 sets no seed (REFACTOR_00 O-2), so this is what makes old and new
-	 start from the same state, and it leaves the original run starting from
-	 exactly the state it would have had without the harness.
+	 RNG state is saved before the first (_old) run and restored before the
+	 production run. Part2 sets no seed (REFACTOR_00 O-2), so this is what
+	 makes old and new start from the same state, and it leaves the production
+	 run starting from exactly the state it would have had without the harness.
 	**************************************/
 	local refval_rng0 `c(rngstate)'
 	/* the sort RNG (tie order of unstable sorts and merges) is separate from
 	   the main RNG and is saved/restored too, so both runs break ties identically */
 	local refval_sort0 `c(sortrngstate)'
 
-	do "$input_code_cd\calibration_catch_per_trip_part2_refactored.do"
-	refval_capture , part(part2) side(new) ts(`refval_ts') files(`refval_p2_files') copyfiles(`refval_p2_copy')
+	do "$input_code_cd\calibration_catch_per_trip_part2_old.do"
+	refval_capture , part(part2) side(old) ts(`refval_ts') files(`refval_p2_files') copyfiles(`refval_p2_copy')
 
 	set rngstate `refval_rng0'
 	set sortrngstate `refval_sort0'
 	do "$input_code_cd\calibration_catch_per_trip_part2.do"
-	refval_capture , part(part2) side(old) ts(`refval_ts') files(`refval_p2_files') copyfiles(`refval_p2_copy')
+	refval_capture , part(part2) side(new) ts(`refval_ts') files(`refval_p2_files') copyfiles(`refval_p2_copy')
 
-	refval_compare , part(part2) ts(`refval_ts') verbose(`refval_cf_verbose')
+	refval_compare , part(part2) ts(`refval_ts') verbose(`refval_cf_verbose') ///
+		newlabel(calibration_catch_per_trip_part2.do) oldlabel(calibration_catch_per_trip_part2_old.do)
 	local refval_pass = r(pass)
 	local refval_report "`r(report)'"
 	if `refval_pass' di as result "REFVAL part2: PASS -- report: `refval_report'"
 	else di as error "REFVAL part2: FAIL -- see `refval_report'"
 
-	/* the original already ran (last), so production paths hold original output: skip step 5c */
+	/* the production version already ran (last), so production paths hold its output: skip step 5c */
 	local catch_per_trip2 = 0
 }
 * === END REFACTOR VALIDATION HARNESS (calibration_catch_per_trip part2) ===
@@ -482,7 +489,7 @@ if `angler_demogs'{
 		}
 * === BEGIN REFACTOR VALIDATION HARNESS (catch_at_length_calibration) ===
 if `validate_catch_at_length_cal' {
-	di "REFVAL cal: running _refactored, then original, then comparing ($ndraws draws)"
+	di "REFVAL cal: running _old (retired original), then production version, then comparing ($ndraws draws)"
 
 	/* step 9 needs the simulated totals written by step 6; stop here if missing */
 	confirm file "$misc_data_cd\simulated_catch_totals_for_catch_length.dta"
@@ -495,35 +502,37 @@ if `validate_catch_at_length_cal' {
 	local refval_cal_files `"`refval_cal_files' "$misc_data_cd\baseline_catch_at_length.csv""'
 
 	/************************************
-	 RNG state is saved before the new run and restored before the original,
-	 so the original starts from exactly the state it would have had without
-	 the harness. Both catch_at_length scripts set their own seed, so this is
-	 redundant here; kept so all harness blocks read the same way.
+	 RNG state is saved before the first (_old) run and restored before the
+	 production run, so the production run starts from exactly the state it
+	 would have had without the harness. Both catch_at_length scripts set
+	 their own seed, so this is redundant here; kept so all harness blocks
+	 read the same way.
 	 Neither run is followed by cd $here: the script changes directory
 	 (REFACTOR_00 R6) and a harness-free run would be left there too. All
-	 harness paths are absolute.
+	 harness paths are absolute, and neither script reads a relative path
+	 before its own cd, so the run order does not matter for paths.
 	**************************************/
 	local refval_rng0 `c(rngstate)'
 	/* the sort RNG (tie order of unstable sorts and merges) is separate from
 	   the main RNG and is saved/restored too, so both runs break ties identically */
 	local refval_sort0 `c(sortrngstate)'
 
-	do "$input_code_cd\catch_at_length_calibration_refactored.do"
-	refval_capture , part(cal) side(new) ts(`refval_ts') files(`refval_cal_files') copyfiles(`refval_cal_files')
+	do "$input_code_cd\catch_at_length_calibration_old.do"
+	refval_capture , part(cal) side(old) ts(`refval_ts') files(`refval_cal_files') copyfiles(`refval_cal_files')
 
 	set rngstate `refval_rng0'
 	set sortrngstate `refval_sort0'
 	do "$input_code_cd\catch_at_length_calibration.do"
-	refval_capture , part(cal) side(old) ts(`refval_ts') files(`refval_cal_files') copyfiles(`refval_cal_files')
+	refval_capture , part(cal) side(new) ts(`refval_ts') files(`refval_cal_files') copyfiles(`refval_cal_files')
 
 	refval_compare , part(cal) ts(`refval_ts') verbose(`refval_cf_verbose') ///
-		newlabel(catch_at_length_calibration_refactored.do) oldlabel(catch_at_length_calibration.do)
+		newlabel(catch_at_length_calibration.do) oldlabel(catch_at_length_calibration_old.do)
 	local refval_pass = r(pass)
 	local refval_report "`r(report)'"
 	if `refval_pass' di as result "REFVAL cal: PASS -- report: `refval_report'"
 	else di as error "REFVAL cal: FAIL -- see `refval_report'"
 
-	/* the original already ran (last), so production paths hold original output: skip step 9 */
+	/* the production version already ran (last), so production paths hold its output: skip step 9 */
 	local generate_baseline = 0
 }
 * === END REFACTOR VALIDATION HARNESS (catch_at_length_calibration) ===
@@ -553,10 +562,10 @@ if `Rpush_catch_at_length_to_gdrive'{
 }		
 * === BEGIN REFACTOR VALIDATION HARNESS (catch_at_length_projection) ===
 if `validate_catch_at_length_proj' {
-	di "REFVAL proj: running _refactored, then original, then comparing ($ndraws draws)"
+	di "REFVAL proj: running _old (retired original), then production version, then comparing ($ndraws draws)"
 
-	/* step 10 reads both calibration CSVs (step 9 output, original's if the
-	   cal block above ran); stop here if either is missing */
+	/* step 10 reads both calibration CSVs (step 9 output, the production
+	   version's if the cal block above ran); stop here if either is missing */
 	confirm file "$misc_data_cd\baseline_catch_at_length_observed.csv"
 	confirm file "$misc_data_cd\baseline_catch_at_length.csv"
 
@@ -567,30 +576,30 @@ if `validate_catch_at_length_proj' {
 	local refval_proj_files `""$misc_data_cd\projected_catch_at_length.csv""'
 
 	/************************************
-	 RNG state is saved before the new run and restored before the original;
-	 see the cal block above for why this is redundant but kept.
+	 RNG state is saved before the first (_old) run and restored before the
+	 production run; see the cal block above for why this is redundant but kept.
 	**************************************/
 	local refval_rng0 `c(rngstate)'
 	/* the sort RNG (tie order of unstable sorts and merges) is separate from
 	   the main RNG and is saved/restored too, so both runs break ties identically */
 	local refval_sort0 `c(sortrngstate)'
 
-	do "$input_code_cd\catch_at_length_projection_refactored.do"
-	refval_capture , part(proj) side(new) ts(`refval_ts') files(`refval_proj_files') copyfiles(`refval_proj_files')
+	do "$input_code_cd\catch_at_length_projection_old.do"
+	refval_capture , part(proj) side(old) ts(`refval_ts') files(`refval_proj_files') copyfiles(`refval_proj_files')
 
 	set rngstate `refval_rng0'
 	set sortrngstate `refval_sort0'
 	do "$input_code_cd\catch_at_length_projection.do"
-	refval_capture , part(proj) side(old) ts(`refval_ts') files(`refval_proj_files') copyfiles(`refval_proj_files')
+	refval_capture , part(proj) side(new) ts(`refval_ts') files(`refval_proj_files') copyfiles(`refval_proj_files')
 
 	refval_compare , part(proj) ts(`refval_ts') verbose(`refval_cf_verbose') ///
-		newlabel(catch_at_length_projection_refactored.do) oldlabel(catch_at_length_projection.do)
+		newlabel(catch_at_length_projection.do) oldlabel(catch_at_length_projection_old.do)
 	local refval_pass = r(pass)
 	local refval_report "`r(report)'"
 	if `refval_pass' di as result "REFVAL proj: PASS -- report: `refval_report'"
 	else di as error "REFVAL proj: FAIL -- see `refval_report'"
 
-	/* the original already ran (last), so production paths hold original output: skip step 10 */
+	/* the production version already ran (last), so production paths hold its output: skip step 10 */
 	local catch_at_length_project = 0
 }
 * === END REFACTOR VALIDATION HARNESS (catch_at_length_projection) ===
