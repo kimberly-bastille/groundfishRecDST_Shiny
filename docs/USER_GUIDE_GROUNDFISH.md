@@ -142,7 +142,7 @@ The page has three parts, from top to bottom: a chart comparing cod and haddock 
 
 ------------------------------------------------------------------------
 
-The **Supplemental Figures** selector: Below the main table is a row of checkboxes labeled Supplemental Figures, with three choices: **Angler Satisfaction**, **Discards**, and **Trips**. Each box you select adds two figures to the bottom of the page - one for cod and one for haddock. Clear a box and its figures disappear. These figures are described below.
+The **Supplemental Figures** selector: Below the main table is a row of checkboxes labeled Supplemental Figures, with three choices: **Compensating Variation**, **Discards**, and **Trips**. Each box you select adds two figures to the bottom of the page - one for cod and one for haddock. Clear a box and its figures disappear. These figures are described below.
 
 ![Figure 6: Screenshot of the Supplemental Figures checkbox row](figures/SupplementalFigures.png)
 
