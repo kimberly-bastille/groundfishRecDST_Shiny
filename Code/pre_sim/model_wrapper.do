@@ -175,26 +175,26 @@ global trawl_survey_start_year 2022
 /******************************************************************************/
 
 // Control which modules to run (set to 0 to skip)
-loc pull_assessment = 0		 		// Pull Assessment data
-loc pull_MRIP = 0		 			// Pull MRIP data.
+loc pull_assessment = 1		 		// Pull Assessment data
+loc pull_MRIP = 1		 			// Pull MRIP data.
 
 loc processMRIP = 0	 			// deal with casing MRIP data
 loc assemblemriplists =0		 	// deal with casing MRIP data
-loc estimate_dtrips = 0				// Estimate Directed Trips
-loc costs_per_trip = 0  			// Create Distributions of costs per trip (run 1x)
-loc draw_angler_preferences = 0		// Create draw of angler preference parameters (run 1x)
-loc catch_per_trip1 = 0				// Part 1 of catch per trip
+loc estimate_dtrips = 1				// Estimate Directed Trips
+loc costs_per_trip = 1  			// Create Distributions of costs per trip (run 1x)
+loc draw_angler_preferences = 1		// Create draw of angler preference parameters (run 1x)
+loc catch_per_trip1 = 1				// Part 1 of catch per trip
 loc copula_in_R = 1					// Copula model in R
 loc catch_per_trip2 = 1				// Part 2 of catch per trip
 loc compare_calibration_MRIP = 1	// compare calibration output to MRIP
 loc prep_cpt_for_dashboard= 1		// prep data for dashboard
-loc Rpush_cpt_to_gdrive =1 			// Push to google drive in R
+loc Rpush_cpt_to_gdrive =0 			// Push to google drive in R
 loc angler_demogs	=1				// add additional angler demographics
 loc generate_baseline=1				// Generate baseline-year catch-at-length
-loc prep_catch_at_length_for_dash= 1		// Prep catch at length data for dashboard
-loc Rpush_catch_at_length_to_gdrive =1 			// Push catch at length data to  google drive in R
-loc catch_at_length_project=1			// Generate projection-year catch-at-length
-loc run_calibration=1						// Run calibration routine in R
+loc prep_catch_at_length_for_dash= 0		// Prep catch at length data for dashboard
+loc Rpush_catch_at_length_to_gdrive =0 			// Push catch at length data to  google drive in R
+loc catch_at_length_project=0			// Generate projection-year catch-at-length
+loc run_calibration=0						// Run calibration routine in R
 
 
 
@@ -202,7 +202,7 @@ loc run_calibration=1						// Run calibration routine in R
 local proto = 1
 
 if `proto' {
-	global ndraws 3
+	global ndraws 5
 }
 
 * === BEGIN REFACTOR VALIDATION HARNESS (config) ===
@@ -221,10 +221,10 @@ if `proto' {
  Remove this block, the four Section E blocks, and Code/refactor_validation/
  at retirement (REFACTOR_06).
 **************************************/
-local validate_catch_per_trip1 = 0		// 1 = compare part1 original vs _refactored (Pair A)
-local validate_catch_per_trip2 = 0		// 1 = compare part2 original vs _refactored (Pair A)
-local validate_catch_at_length_cal = 0	// 1 = compare catch_at_length_calibration original vs _refactored (Pair B, step 9)
-local validate_catch_at_length_proj = 0	// 1 = compare catch_at_length_projection original vs _refactored (Pair B, step 10)
+local validate_catch_per_trip1 = 1		// 1 = compare part1 original vs _refactored (Pair A)
+local validate_catch_per_trip2 = 1		// 1 = compare part2 original vs _refactored (Pair A)
+local validate_catch_at_length_cal = 1	// 1 = compare catch_at_length_calibration original vs _refactored (Pair B, step 9)
+local validate_catch_at_length_proj = 1	// 1 = compare catch_at_length_projection original vs _refactored (Pair B, step 10)
 local refval_copy_draws = $ndraws		// part2: how many calib_catch_draws_<i>.dta to copy aside for cf.
 										//   Every draw is fingerprinted regardless; lower this only if disk is tight.
 local refval_cf_verbose = 0				// 1 = cf also lists every differing observation (large logs)
