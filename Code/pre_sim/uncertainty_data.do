@@ -43,9 +43,9 @@
 // I could save a baseline_catch_at_length.csv that has what I need and run stuff or I can name it 
 // something else and then edit the downstream code to basically replicate everything but using
 // that input data. For now I am naming them differently....
-// I'm grabbing medians. Do we want to test the means?
-// just to check, the projected_catch_at_length.csv isn't used anywhere in the pipeline
-// maybe the sim code is recalculating it somwhere using the baseline_catch_at_length and projected NAA's?
+// just to check, the projected_catch_at_length.csv isn't used anywhere in the pipeline. yes it is 
+////DO WE ALSO WANT MEANS? not now. maybe later
+//projected_catch_at_length gets used in predict rec catch functions so make medians for that
 
 /******************************************************************************/
 /******************************************************************************/
@@ -121,9 +121,6 @@ append using `hadd_med'
 export delimited using "$misc_data_cd/baseline_catch_at_length_uc_hadd.csv", replace
 restore
 
-////DO WE ALSO WANT MEANS? not now. maybe later
-// DO WE ALSO WANT A VERSION WITH THE MEDIANS FOR BOTH COD AND HADD
-//projected_catch_at_length gets used in predict rec catch functions so make medians for that
 
 /******************************************************************************/
 /******************************************************************************/
@@ -198,18 +195,6 @@ export delimited using "$misc_data_cd/projected_catch_at_length_uc_gf.csv", repl
 
 
 //projected CATCH AT LENGTH is called in predict_rec_catch_functions.R
-
-
-//think you need to rename things so that they all contain the same pattern, so 
-//baseline_catch_at_length.csv
-//baseline_catch_at_length_uc_cod.csv
-//baseline_catch_at_length_uc_hadd.csv
-//baseline_catch_at_length_uc_gf.csv
-
-//projected_catch_at_length.csv
-//projected_catch_at_length_uc_cod.csv
-//projected_catch_at_length_uc_hadd.csv
-//projected_catch_at_length_uc_gf.csv
 
 
 
