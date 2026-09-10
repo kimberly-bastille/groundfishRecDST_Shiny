@@ -1,12 +1,11 @@
 /*******************************************************************************
  Script:       calibration_catch_per_trip_part1.do
- Status:       Production version since Phase 6 Part A (REFACTOR_06a). This is
-               the refactored script. The pre-refactor original is kept,
-               byte-identical, as calibration_catch_per_trip_part1_old.do so the
-               validation harness in model_wrapper.do can still compare the
-               two; both go away in Phase 6 Part B. The harness reported an
-               exact match on every output at $ndraws = 101 before this
-               file took over (REFACTOR_01, REFACTOR_02, REFACTOR_03).
+ Status:       Refactored September 2026 to remove copy-paste duplication.
+               Validated before it replaced the original: with both versions
+               run from the same RNG state, every output file matched exactly
+               (cf + datasignature, or byte-for-byte for CSV) at $ndraws = 101.
+               The pre-refactor original is in git history:
+                 git show fc318d1:Code/pre_sim/<this file name>
  Purpose:      Uses MRIP trip and catch records to build the calibration-year
                catch-per-trip inputs for the copula simulation, plus the MRIP
                benchmark totals used later to check the simulation.
@@ -35,8 +34,8 @@
                output feeds copula_modeling_calibration.R (step 5b), then
                calibration_catch_per_trip_part2.do (step 5c).
 
- What changed relative to the original, now calibration_catch_per_trip_part1_old.do
- (line numbers below refer to that file; details in REFACTOR_02):
+ What changed relative to the original (line numbers below refer to the
+ pre-refactor file at git commit fc318d1):
    The original repeated one ~158-line MRIP prep block four times (Part A,
    B.1, B.2, B.3), a svy/postfile estimation loop four times, a results
    decoder four times, and an export block three times. Each of those is now
@@ -111,7 +110,7 @@ end ;
    season       : optional flag. If given, a winter/summer season variable is
                   generated from month before the domain string is built.
                   Used by B.3 only.
- Deviations from the original, all output-identical (REFACTOR_01 section 5):
+ Deviations from the original, all output-identical:
    D-a  the site-list merge always uses nogen. The original omitted nogen in
         B.1-B.3, leaving a _merge column in a basefile that B never reads.
    D-b  tostring wave/year always runs before the domain string is built
@@ -179,7 +178,7 @@ program define prep_mrip_trip_catch ;
     /* classify trips into the domain we care about (caught or targeted cod
        or haddock) and everything else, marked "ZZ".
        PRESERVED: prim2_common is assigned from prim1_common, as in the
-       original (REFACTOR_01 F-1). prim2_common is not used downstream. */
+       original (probably a bug there). prim2_common is not used downstream. */
     replace prim1_common=subinstr(lower(prim1_common)," ","",.) ;
     replace prim2_common=subinstr(lower(prim1_common)," ","",.) ;
 
@@ -488,8 +487,8 @@ levelsof strata_id, local(stratz) ;
 tempfile missing_se ;
 save `missing_se', replace ;
 
-/* Round 1 of SE imputation. Left as in the original (REFACTOR_01 P1-2,
-   user decision 2): one svy: mean per missing-SE stratum, posting the
+/* Round 1 of SE imputation. Left as in the original by decision during the
+   refactor: one svy: mean per missing-SE stratum, posting the
    stratum's domain string rather than the r(table) column name. */
 global impute ;
 foreach s of local stratz {;
@@ -636,11 +635,11 @@ mvencode missing*, mv(0) override ;
 mvencode mean*, mv(0) override ;
 replace cod_no_catch=1 if meancod_rel==0 & meancod_keep==0 ;
 /* PRESERVED: the hadd flag is set from the cod means, as in the original
-   (REFACTOR_01 F-2). Do not "fix" here. This file must match the original. */
+   (probably a bug there). Left as is so the outputs stay identical. */
 replace hadd_no_catch=1 if meancod_rel==0 & meancod_keep==0 ;
 
 /* The .dta is saved from a re-import of the .xlsx, so its types are whatever
-   survived the Excel round-trip. Preserved exactly (REFACTOR_00 R2). */
+   survived the Excel round-trip. Preserved exactly. */
 export excel "$misc_data_cd\baseline_mrip_catch_processed.xlsx", firstrow(variables) replace ;
 import excel using "$misc_data_cd\baseline_mrip_catch_processed.xlsx", clear first ;
 

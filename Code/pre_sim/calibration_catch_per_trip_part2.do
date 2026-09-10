@@ -1,12 +1,11 @@
 /*******************************************************************************
  Script:       calibration_catch_per_trip_part2.do
- Status:       Production version since Phase 6 Part A (REFACTOR_06a). This is
-               the refactored script. The pre-refactor original is kept,
-               byte-identical, as calibration_catch_per_trip_part2_old.do so the
-               validation harness in model_wrapper.do can still compare the
-               two; both go away in Phase 6 Part B. The harness reported an
-               exact match on every output at $ndraws = 101 before this
-               file took over (REFACTOR_01, REFACTOR_02, REFACTOR_03).
+ Status:       Refactored September 2026 to remove copy-paste duplication.
+               Validated before it replaced the original: with both versions
+               run from the same RNG state, every output file matched exactly
+               (cf + datasignature, or byte-for-byte for CSV) at $ndraws = 101.
+               The pre-refactor original is in git history:
+                 git show fc318d1:Code/pre_sim/<this file name>
  Purpose:      Assembles the per-iteration calibration catch-draw files that the
                R simulation consumes. First builds an angler demographics pool
                (age and avidity) from the FES 12-month person files. Then, for
@@ -34,11 +33,12 @@
 
  RNG note: this file draws random samples (sample ..., count) but, like the
  original, does NOT set a seed. It inherits the session RNG state. The
- validation harness sets an identical state before the old and the new run
- (REFACTOR_00 O-2). The number and order of RNG-consuming calls is unchanged.
+ validation harness (since removed) set an identical state before the old and
+ the new run. The number and order of RNG-consuming calls is
+ unchanged from the original.
 
- What changed relative to the original, now calibration_catch_per_trip_part2_old.do
- (line numbers below refer to that file; details in REFACTOR_02):
+ What changed relative to the original (line numbers below refer to the
+ pre-refactor file at git commit fc318d1):
    - The four-line sample-with-replacement idiom that appeared three times
      (original lines 274-277, 313-316, 371-374) is the program
      sample_with_replacement, defined once below.
@@ -47,8 +47,7 @@
    - Everything else is unchanged apart from semicolon delimiting and
      comment style. In particular the three within-key id blocks (mode_id,
      month_id, wave_id) and the two resample loops are verbatim, because
-     their sort behaviour decides which resampled row lands on which trip
-     (REFACTOR_01 P2-2, P2-4).
+     their sort behaviour decides which resampled row lands on which trip.
    Known oddities in the original are preserved on purpose and marked
    "PRESERVED" below.
 *******************************************************************************/
@@ -106,7 +105,7 @@ foreach w of local wvs {;
     /* PRESERVED: this state block has no ME (23) or NH (33) lines, unlike
        part1's, and the next keep drops every unlabelled state. The pool
        therefore ends up MA-only after the inlist() at the end of Section A
-       (REFACTOR_01 F-3 / X-1). Kept as in the original. */
+       Kept as in the original. */
     gen state="MA" if st==25 ;
     replace state="MD" if st==24 ;
     replace state="RI" if st==44 ;
@@ -227,7 +226,7 @@ quietly forvalues i=1/$ndraws {;
        demographics resample (by wave) below, so each stratum is filled to
        exactly the right size.
        PRESERVED: n_month1..12 and month_id are computed but never used
-       afterwards (REFACTOR_01 F-4). They are kept because the month_id merge
+       afterwards. They are kept because the month_id merge
        re-sorts the data and later steps inherit that order. */
     foreach md in pr fh {;
         qui distinct group if mode=="`md'" ;
@@ -237,7 +236,7 @@ quietly forvalues i=1/$ndraws {;
     /* PRESERVED: no explicit sort before "by mode:". It works because
        duplicates drop leaves the data sorted on mode date tripid (dataset
        variable order). The month and wave blocks below sort explicitly. The
-       three blocks are deliberately left verbatim (REFACTOR_01 P2-2). */
+       three blocks are deliberately left verbatim. */
     preserve ;
     keep date mode tripid ;
     duplicates drop ;

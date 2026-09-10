@@ -1,12 +1,11 @@
 /*******************************************************************************
  Script:       catch_at_length_calibration.do
- Status:       Production version since Phase 6 Part A (REFACTOR_06a). This is
-               the refactored script. The pre-refactor original is kept,
-               byte-identical, as catch_at_length_calibration_old.do so the
-               validation harness in model_wrapper.do can still compare the
-               two; both go away in Phase 6 Part B. The harness reported an
-               exact match on every output at $ndraws = 101 before this
-               file took over (REFACTOR_04, REFACTOR_04b, REFACTOR_04c).
+ Status:       Refactored September 2026 to remove copy-paste duplication.
+               Validated before it replaced the original: with both versions
+               run from the same RNG state, every output file matched exactly
+               (cf + datasignature, or byte-for-byte for CSV) at $ndraws = 101.
+               The pre-refactor original is in git history:
+                 git show fc318d1:Code/pre_sim/<this file name>
  Purpose:      Builds the calibration-year catch-at-length distributions for
                WGOM cod and haddock. Harvest (A+B1) and discard (B2) lengths
                are estimated separately from MRIP size data, converted to
@@ -35,8 +34,8 @@
                catch_at_length_projection.do is the projection-year
                counterpart and reads both CSVs written here.
 
- What changed relative to the original, now catch_at_length_calibration_old.do
- (line numbers below refer to that file; details in REFACTOR_04b):
+ What changed relative to the original (line numbers below refer to the
+ pre-refactor file at git commit fc318d1):
    The original repeated one ~115-line MRIP trip-plus-length prep block and
    one ~30-line svy:tab-to-long block, once for discards (Section A) and
    once for harvest (Section B). Each is now a program defined once below:
@@ -310,7 +309,7 @@ save `b2', replace ;
 di "catch_at_length_calibration: building MRIP harvest lengths ..." ;
 
 /* PRESERVED: the original changes the working directory here and never
-   restores it (REFACTOR_00 R6). Nothing in this file uses a relative path
+   restores it. Nothing in this file uses a relative path
    after this point; model_wrapper.do issues cd $here later. Kept so the
    session state after this script is identical to the original's. */
 cd $misc_data_cd ;

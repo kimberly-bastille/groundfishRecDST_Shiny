@@ -1,12 +1,11 @@
 /*******************************************************************************
  Script:       catch_at_length_projection.do
- Status:       Production version since Phase 6 Part A (REFACTOR_06a). This is
-               the refactored script. The pre-refactor original is kept,
-               byte-identical, as catch_at_length_projection_old.do so the
-               validation harness in model_wrapper.do can still compare the
-               two; both go away in Phase 6 Part B. The harness reported an
-               exact match on every output at $ndraws = 101 before this
-               file took over (REFACTOR_04, REFACTOR_04b, REFACTOR_04c).
+ Status:       Refactored September 2026 to remove copy-paste duplication.
+               Validated before it replaced the original: with both versions
+               run from the same RNG state, every output file matched exactly
+               (cf + datasignature, or byte-for-byte for CSV) at $ndraws = 101.
+               The pre-refactor original is in git history:
+                 git show fc318d1:Code/pre_sim/<this file name>
  Purpose:      Produces the projection-year catch-at-length probability
                distribution for WGOM cod and GOM haddock. The idea is to hold
                recreational selectivity at length fixed at what was observed
@@ -52,8 +51,8 @@
                model_wrapper.do. The exported CSV is what the R simulation
                reads to decide the size composition of projection-year catch.
 
- What changed relative to the original, now catch_at_length_projection_old.do
- (line numbers below refer to that file; details in REFACTOR_04b):
+ What changed relative to the original (line numbers below refer to the
+ pre-refactor file at git commit fc318d1):
    The original did Sections 2, 3 and 5 once for cod and once for haddock.
    The parts that were identical apart from species-specific values are
    now programs defined once below:

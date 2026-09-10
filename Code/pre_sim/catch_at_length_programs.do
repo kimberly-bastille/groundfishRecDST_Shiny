@@ -1,9 +1,8 @@
 /*******************************************************************************
  Script:       catch_at_length_programs.do
- Status:       Shared programs for the catch-at-length scripts
-               (catch_at_length_calibration.do and catch_at_length_projection.do,
-               the refactored versions, production since Phase 6 Part A,
-               REFACTOR_06a). Each of those files
+ Status:       Shared programs for catch_at_length_calibration.do and
+               catch_at_length_projection.do (added in the September 2026
+               refactor). Each of those files
                loads this one at its top with
                  do "$input_code_cd/catch_at_length_programs.do"
                so model_wrapper.do needs no change. It is safe to load more
@@ -12,11 +11,10 @@
                calibration and projection scripts:
                  fit_gamma_by_domain   original cal 507-601 / proj 551-660
                  truncate_to_observed  original cal 648-658 / proj 717-726
-               (line numbers in catch_at_length_calibration_old.do and
-               catch_at_length_projection_old.do, the retired originals)
+               (line numbers in the pre-refactor files at git commit fc318d1:
+               git show fc318d1:Code/pre_sim/catch_at_length_<cal|proj>.do)
                Each body is the original loop verbatim with the variable names
-               that differed between the two copies turned into parameters
-               (see REFACTOR_04_duplication_pairB.md, X-B1 and X-B2).
+               that differed between the two copies turned into parameters.
  Inputs:       None of its own. The programs act on the dataset in memory.
  Outputs:      None of its own.
  Dependencies: Called with the data the two scripts already have in memory.

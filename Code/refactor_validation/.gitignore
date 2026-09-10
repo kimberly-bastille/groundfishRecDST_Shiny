@@ -1,4 +1,0 @@
-# Refactor validation harness (REFACTOR_03). Data copies are local evidence,
-# not source: keep the tooling and the text reports, ignore the datasets.
-*.dta
-*.xlsx
