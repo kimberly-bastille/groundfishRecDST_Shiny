@@ -266,7 +266,7 @@ cap_with_resample <- function(x, max_x) {
 
     room <- max_x - x_cap[candidates]
     probs <- room / sum(room)
-    chosen <- sample(candidates, size = 1, prob = probs)
+    chosen <- candidates[sample.int(length(candidates), size = 1, prob = probs)]
     x_cap[chosen] <- x_cap[chosen] + 1
     excess <- excess - 1
   }
