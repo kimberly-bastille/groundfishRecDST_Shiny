@@ -125,6 +125,9 @@ global seed 03211990
 /******************************************************************************/
 /******************************************************************************/
 
+/*set mrip type either cal_2018 or cal_2026 */
+global mrip_cal_type "cal_2018"
+
 /* years/waves of MRIP data.*/
 /* used by:
 tidyup_mrip_data_fromR.do
@@ -234,8 +237,8 @@ global sizelist  "$misc_data_cd/mrip_size.dta"
 
 
 if `pull_MRIP' {
-  	di "Pulling MRIP data from oracle"
-		rscript using "$input_code_cd\get_mrip_oracle.R", args($first_mrip_year $last_mrip_year)
+  	di "Pulling MRIP data from oracle, this takes a few minutes"
+		rscript using "$input_code_cd\get_mrip_oracle.R", args($mrip_cal_type $first_mrip_year $last_mrip_year)
     di "Oracle Data Pull Finished"
 
   	di "Tidying up MRIP data"
