@@ -176,11 +176,9 @@ program define prep_mrip_trip_catch ;
     drop if mode1=="sh" ;
 
     /* classify trips into the domain we care about (caught or targeted cod
-       or haddock) and everything else, marked "ZZ".
-       PRESERVED: prim2_common is assigned from prim1_common, as in the
-       original (probably a bug there). prim2_common is not used downstream. */
+       or haddock) and everything else, marked "ZZ". */
     replace prim1_common=subinstr(lower(prim1_common)," ","",.) ;
-    replace prim2_common=subinstr(lower(prim1_common)," ","",.) ;
+    replace prim2_common=subinstr(lower(prim2_common)," ","",.) ;
 
     /* We need to retain 1 observation for each strat_id, psu_id, and id_code
        A.  Trip targeted or caught cod or haddock -> domain "ATLCO"
