@@ -32,7 +32,7 @@
 #
 # Pipeline: Terminal, user-facing layer. Everything it reads is produced
 #          upstream by the Stata pre_sim scripts -> R sim scripts chain
-#          described in DATAFLOW_GROUNDFISH.md.
+#          (see README.md, "Data Flow Summary").
 ################################################################################
 ################################################################################
 
