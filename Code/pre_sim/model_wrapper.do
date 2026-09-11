@@ -22,8 +22,8 @@
 			   run "Code/helpers/googledrivesetup.R".  If you do not the
 			   the R scripts that use googledrive will fail ungracefully.
  Pipeline:     Step 0 / very top of the whole pipeline. Each toggle below runs
-               one pre_sim script (execution order documented in
-               DATAFLOW_GROUNDFISH.md); the final toggle hands off to
+               one pre_sim script (execution order: README.md, "Running the
+               Pipeline"); the final toggle hands off to
                Code/sim/R code wrapper.R for the simulation.
 
  Before running: this wrapper uses `here` to locate the project root, so you
@@ -42,10 +42,6 @@
      (on Windows, mount \\net.nefsc.noaa.gov\mrfss to A:).
 
  THESE GLOBALS AND REGULATIONS MUST BE UPDATED EVERY YEAR (see Section A).
-
- Note:         Suspected mislabeling (flagged, code unchanged): in Section E the
-               $b2list and $sizelist macros appear to point at swapped files
-               ($b2list -> mrip_size.dta, $sizelist -> mrip_size_b2.dta).
 *******************************************************************************/
 
 set varabbrev on
@@ -125,6 +121,9 @@ global seed 03211990
 /******************************************************************************/
 /******************************************************************************/
 
+/*set mrip type either cal_2018 or cal_2026 */
+global mrip_cal_type "cal_2018"
+
 /* years/waves of MRIP data.*/
 /* used by:
 tidyup_mrip_data_fromR.do
@@ -175,34 +174,34 @@ global trawl_survey_start_year 2022
 /******************************************************************************/
 
 // Control which modules to run (set to 0 to skip)
-loc pull_assessment = 0		 		// Pull Assessment data
-loc pull_MRIP = 0		 			// Pull MRIP data.
+loc pull_assessment = 1		 		// Pull Assessment data
+loc pull_MRIP = 1		 			// Pull MRIP data.
 
 loc processMRIP = 0	 			// deal with casing MRIP data
 loc assemblemriplists =0		 	// deal with casing MRIP data
-loc estimate_dtrips = 0				// Estimate Directed Trips
-loc costs_per_trip = 0  			// Create Distributions of costs per trip (run 1x)
-loc draw_angler_preferences = 0		// Create draw of angler preference parameters (run 1x)
-loc catch_per_trip1 = 0				// Part 1 of catch per trip
+loc estimate_dtrips = 1				// Estimate Directed Trips
+loc costs_per_trip = 1  			// Create Distributions of costs per trip (run 1x)
+loc draw_angler_preferences = 1		// Create draw of angler preference parameters (run 1x)
+loc catch_per_trip1 = 1				// Part 1 of catch per trip
 loc copula_in_R = 1					// Copula model in R
 loc catch_per_trip2 = 1				// Part 2 of catch per trip
 loc compare_calibration_MRIP = 1	// compare calibration output to MRIP
 loc prep_cpt_for_dashboard= 1		// prep data for dashboard
-loc Rpush_cpt_to_gdrive =1 			// Push to google drive in R
+loc Rpush_cpt_to_gdrive =0 			// Push to google drive in R
 loc angler_demogs	=1				// add additional angler demographics
 loc generate_baseline=1				// Generate baseline-year catch-at-length
-loc prep_catch_at_length_for_dash= 1		// Prep catch at length data for dashboard
-loc Rpush_catch_at_length_to_gdrive =1 			// Push catch at length data to  google drive in R
-loc catch_at_length_project=1			// Generate projection-year catch-at-length
-loc run_calibration=1						// Run calibration routine in R
+loc prep_catch_at_length_for_dash= 0		// Prep catch at length data for dashboard
+loc Rpush_catch_at_length_to_gdrive =0 			// Push catch at length data to  google drive in R
+loc catch_at_length_project=0			// Generate projection-year catch-at-length
+loc run_calibration=0						// Run calibration routine in R
 
 
 
-// Prototyping: set proto=1 to override $ndraws down to 3 for a fast test run.
+// Prototyping: set proto=1 to override $ndraws down to the small value below for a fast test run.
 local proto = 1
 
 if `proto' {
-	global ndraws 3
+	global ndraws 5
 }
 
 /******************************************************************************/
@@ -234,8 +233,8 @@ global sizelist  "$misc_data_cd/mrip_size.dta"
 
 
 if `pull_MRIP' {
-  	di "Pulling MRIP data from oracle"
-		rscript using "$input_code_cd\get_mrip_oracle.R", args($first_mrip_year $last_mrip_year)
+  	di "Pulling MRIP data from oracle, this takes a few minutes"
+		rscript using "$input_code_cd\get_mrip_oracle.R", args($mrip_cal_type $first_mrip_year $last_mrip_year)
     di "Oracle Data Pull Finished"
 
   	di "Tidying up MRIP data"
