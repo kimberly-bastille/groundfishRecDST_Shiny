@@ -21,7 +21,7 @@ library(data.table)
 
 
 args <- commandArgs(trailingOnly = TRUE)
-
+print(args[1])
 source(here::here("RecDST/model_run.R"))
 
 
