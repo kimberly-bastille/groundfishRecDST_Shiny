@@ -775,7 +775,7 @@ server <- function(input, output, session){
     library(openssl)
     library(uuid)
 
-    Sys.getenv("GROUNDFISH_AZURE_STORAGE_QUEUE_URL")
+    print(Sys.getenv("GROUNDFISH_AZURE_STORAGE_QUEUE_URL"))
     #' @title Put a run request on the Azure Storage queue
     #' @description Posts a small JSON payload naming the run. Authentication
     #'   comes entirely from the shared-access-signature token embedded in the
