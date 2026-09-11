@@ -632,9 +632,7 @@ mvencode se*, mv(0) override ;
 mvencode missing*, mv(0) override ;
 mvencode mean*, mv(0) override ;
 replace cod_no_catch=1 if meancod_rel==0 & meancod_keep==0 ;
-/* PRESERVED: the hadd flag is set from the cod means, as in the original
-   (probably a bug there). Left as is so the outputs stay identical. */
-replace hadd_no_catch=1 if meancod_rel==0 & meancod_keep==0 ;
+replace hadd_no_catch=1 if meanhadd_rel==0 & meanhadd_keep==0 ;
 
 /* The .dta is saved from a re-import of the .xlsx, so its types are whatever
    survived the Excel round-trip. Preserved exactly. */
